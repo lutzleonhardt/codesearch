@@ -7,7 +7,7 @@ Below is an updated version of the step-by-step plan including details on how an
 ## Updated Final File Structure (with Colorization Considerations)
 
 ```plaintext
-codesearch/
+src/
     __init__.py
     cli.py              # CLI entry point, main user interaction loop
     agent/
@@ -47,7 +47,7 @@ codesearch/
 
 ## Detailed Step-by-Step Plan with Colorization
 
-### Step 0: Initial Setup
+### Step 0: Initial Setup [DONE]
 
 **Goal:**  
 Create the directory structure and empty files. Add `colorama` to `requirements.txt`.

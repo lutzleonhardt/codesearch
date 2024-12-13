@@ -7,7 +7,7 @@ Below is an updated version of the step-by-step plan including details on how an
 ## Updated Final File Structure (with Colorization Considerations)
 
 ```plaintext
-codesearch/
+src/
     __init__.py
     cli.py              # CLI entry point, main user interaction loop
     agent/
@@ -47,7 +47,7 @@ codesearch/
 
 ## Detailed Step-by-Step Plan with Colorization
 
-### Step 0: Initial Setup
+### Step 0: Initial Setup [DONE]
 
 **Goal:**  
 Create the directory structure and empty files. Add `colorama` to `requirements.txt`.
@@ -62,4 +62,42 @@ Create the directory structure and empty files. Add `colorama` to `requirements.
 
 - All files exist but are empty. No functionality yet.
 
-### Additional steps follow later
+### Step 1: Configuration & Logging
+
+**Goal:**  
+Implement basic configuration and logging. No colorization needed yet, but you can prepare a helper for coloring.
+
+**Files to Edit:**
+
+- `config/settings.py`:
+    - Implement `BaseSettings` with fields like `OPENAI_MODEL`, `ROOT_DIR`, `VERBOSE`.
+- `cli.py`:
+    - Initialize logging.
+    - Print a simple welcome message.
+
+**Add a Helper for Colorized Output:**
+
+- In `cli.py` or create a small utility file (e.g., `cli_output.py`), write a function `colored_print(message: str, color: str = None)` that uses `colorama`:
+
+    ```python
+    from colorama import Fore, Style, init
+    init(autoreset=True)  # so colors reset after each print
+    
+    def colored_print(message: str, prefix: str = "[codesearch] ", color: str = None):
+        colored_prefix = prefix
+        if color:
+            colored_prefix = getattr(Fore, color.upper(), Fore.WHITE) + prefix + Style.RESET_ALL
+        print(f"{colored_prefix}{message}")
+    ```
+
+- This can be improved later, but provides a base for colorization.
+
+
+**Tests:**
+
+- `test_cli.py`: Ensure CLI runs. No complex tests yet.
+
+**Checks:**
+
+- Run `python -m codesearch.cli`. Should print a welcome message.
+- Later, all outputs will use `colored_print()`.
