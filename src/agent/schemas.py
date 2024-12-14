@@ -1,5 +1,5 @@
-from pydantic import BaseModel
-from typing import Any, Dict
+from pydantic import BaseModel, Field
+from typing import Any, Dict, List
 
 class ToolRequest(BaseModel):
     tool_name: str
@@ -15,4 +15,4 @@ class AgentInput(BaseModel):
 
 class AgentOutput(BaseModel):
     summary: str
-    tool_requests: list[ToolRequest] = []
+    tool_requests: List[ToolRequest] = Field(default_factory=list)

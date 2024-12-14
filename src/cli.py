@@ -45,8 +45,8 @@ def main(verbose, root_dir, rebuild_ctags):
         user_input = input()
         if user_input.lower() == 'q':
             break
-        from src.agent.llm_agent import Agent
-        from src.agent.schemas import AgentInput
+        from .agent.llm_agent import Agent
+        from .agent.schemas import AgentInput
 
         agent = Agent()
         agent_output = agent.run(AgentInput(user_query=user_input))
