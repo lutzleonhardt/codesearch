@@ -45,7 +45,12 @@ def main(verbose, root_dir, rebuild_ctags):
         user_input = input()
         if user_input.lower() == 'q':
             break
-        colored_print(f"You said: {user_input}", color="GREEN")
+        from agent.llm_agent import Agent
+        from agent.schemas import AgentInput
+
+        agent = Agent()
+        agent_output = agent.run(AgentInput(user_query=user_input))
+        colored_print(agent_output.summary, color="YELLOW")
 
 if __name__ == "__main__":
     main()
