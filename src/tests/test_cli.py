@@ -7,7 +7,7 @@ from io import StringIO
 # Add src directory to Python path for imports
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from cli import main, colored_print
+from ..cli import main, colored_print
 
 def test_colored_print():
     """Test that colored_print function works"""

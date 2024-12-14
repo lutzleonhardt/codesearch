@@ -62,7 +62,7 @@ Create the directory structure and empty files. Add `colorama` to `requirements.
 
 - All files exist but are empty. No functionality yet.
 
-### Step 1: Configuration & Logging
+### Step 1: Configuration & Logging [DONE]
 
 **Goal:**  
 Implement basic configuration and logging. No colorization needed yet, but you can prepare a helper for coloring.
@@ -102,7 +102,7 @@ Implement basic configuration and logging. No colorization needed yet, but you c
 - Run `python -m codesearch.cli`. Should print a welcome message.
 - Later, all outputs will use `colored_print()`.
 
-### Step 2: Tool Interface (BaseTool) and Stubs
+### Step 2: Tool Interface (BaseTool) and Stubs [DONE]
 
 **Goal:**  
 Define a `BaseTool` and basic Pydantic models for requests and responses.
