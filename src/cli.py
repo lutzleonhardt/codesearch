@@ -2,9 +2,10 @@ import asyncio
 import logging
 import os
 import click
-from colorama import Fore, Style, init
-
+from colorama import init
 from src.agent.prompts import USER_PROMPT
+from src.agent.schemas import Deps
+from src.shared.utils import colored_print
 
 init(autoreset=True)
 
@@ -27,15 +28,6 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
-def colored_print(message: str, prefix: str = "codesearch> ", color: str = None, linebreak: bool = True):
-    """Print a message with optional color and prefix."""
-    colored_prefix = prefix
-    if color:
-        colored_prefix = getattr(Fore, color.upper(), Fore.WHITE) + prefix + Style.RESET_ALL
-    if linebreak:
-        print(f"{colored_prefix}{message}")
-    else:
-        print(f"{colored_prefix}{message}", end="")
 
 @click.command()
 @click.option('--verbose', is_flag=True, default=False, help='Enable verbose output')
@@ -48,10 +40,7 @@ def main(verbose, root_dir, rebuild_ctags):
 async def async_main(verbose, root_dir, rebuild_ctags):
     """Main entry point for codesearch CLI."""
     logger.info(f"Starting codesearch")
-    colored_print(f"Welcome to codesearch!", color="BLUE")
-    colored_print(f"Root Directory: {root_dir}", color="CYAN")
-    colored_print(f"Verbose: {verbose}", color="CYAN")
-    colored_print(f"Rebuild Ctags: {rebuild_ctags}", color="CYAN")
+    deps = Deps(limit=100, project_root=root_dir)
 
     while True:
         colored_print("Enter query (or 'q' to quit): ", color="BLUE", linebreak=False)
@@ -59,8 +48,9 @@ async def async_main(verbose, root_dir, rebuild_ctags):
         if user_input.lower() == 'q':
             break
         from .agent.llm_agent import agent
-        agent_output = await agent.run(USER_PROMPT + user_input)
+        agent_output = await agent.run(USER_PROMPT + user_input, deps=deps)
         colored_print(agent_output.data.answer, color="GREEN")
+        logger.info(agent_output.all_messages())
 
 if __name__ == "__main__":
     main()  # This will now properly handle the async execution
