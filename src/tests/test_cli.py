@@ -16,8 +16,11 @@ def test_colored_print():
         colored_print("test message", color="BLUE")
         assert "test message" in fake_out.getvalue()
 
-def test_main():
+def test_main(monkeypatch):
     """Test that main function runs with CLI arguments"""
+    # Mock input() to return 'q' to exit the loop
+    monkeypatch.setattr('builtins.input', lambda: 'q')
+    
     runner = CliRunner()
     result = runner.invoke(main, ['--verbose', '--root-dir', 'my_project'])
     assert result.exit_code == 0
