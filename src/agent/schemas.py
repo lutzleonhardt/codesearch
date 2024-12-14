@@ -1,6 +1,12 @@
 from pydantic import BaseModel, Field
 from typing import Any, Dict, List
 
+class DirectoryToolRequest(BaseModel):
+    path: str
+
+class DirectoryToolResponse(BaseModel):
+    structure: Dict[str, Any]
+
 class ToolRequest(BaseModel):
     tool_name: str
     parameters: Dict[str, Any]
