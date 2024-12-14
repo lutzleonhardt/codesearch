@@ -153,7 +153,7 @@ Implement CLI argument parsing and a simple interactive loop. Start using `color
 
 - Run the CLI. Confirm you see `[codesearch]` prefix and green echo messages.
 
-### Step 4: Agent Skeleton with Pydantic AI and Mock Responses
+### Step 4: Agent Skeleton with Pydantic AI and Mock Responses [DONE]
 
 **Goal:**  
 Introduce the LLM agent structure. No actual LLM calls yet.
