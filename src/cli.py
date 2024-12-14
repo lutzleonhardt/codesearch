@@ -18,7 +18,7 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
-def colored_print(message: str, prefix: str = "codesearch> ", color: str = None, linebreak: bool = True):
+def colored_print(message: str, prefix: str = "[codesearch] ", color: str = None, linebreak: bool = True):
     """Print a message with optional color and prefix."""
     colored_prefix = prefix
     if color:
