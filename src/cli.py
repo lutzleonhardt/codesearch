@@ -1,5 +1,6 @@
 import logging
 import os
+import click
 from colorama import Fore, Style, init
 
 init(autoreset=True)
@@ -24,10 +25,23 @@ def colored_print(message: str, prefix: str = "codesearch> ", color: str = None)
         colored_prefix = getattr(Fore, color.upper(), Fore.WHITE) + prefix + Style.RESET_ALL
     print(f"{colored_prefix}{message}")
 
-def main():
+@click.command()
+@click.option('--verbose', is_flag=True, default=False, help='Enable verbose output')
+@click.option('--root-dir', default='.', help='Root directory to explore')
+@click.option('--rebuild-ctags', is_flag=True, default=False, help='Rebuild ctags index')
+def main(verbose, root_dir, rebuild_ctags):
     """Main entry point for codesearch CLI."""
     logger.info("Starting codesearch")
     colored_print("Welcome to codesearch!", color="BLUE")
+    colored_print(f"Root Directory: {root_dir}", color="CYAN")
+    colored_print(f"Verbose: {verbose}", color="CYAN")
+    colored_print(f"Rebuild Ctags: {rebuild_ctags}", color="CYAN")
+
+    while True:
+        user_input = input("Enter query (or 'q' to quit): ")
+        if user_input.lower() == 'q':
+            break
+        colored_print(f"You said: {user_input}", color="GREEN")
 
 if __name__ == "__main__":
     main()
