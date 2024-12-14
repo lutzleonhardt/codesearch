@@ -122,7 +122,7 @@ Define a `BaseTool` and basic Pydantic models for requests and responses.
 
 - Everything still minimal. No colors needed in tools yet since no user output here.
 
-### Step 3: CLI Structure (Without Real Agent) & Mock Interaction
+### Step 3: CLI Structure (Without Real Agent) & Mock Interaction [DONE]
 
 **Goal:**  
 Implement CLI argument parsing and a simple interactive loop. Start using `colored_print()` for all CLI messages.
@@ -131,6 +131,7 @@ Implement CLI argument parsing and a simple interactive loop. Start using `color
 
 - `cli.py`:
     - Parse `--verbose`, `--root-dir`, `--rebuild-ctags` using `click` or `typer`.
+    - for --help give a help message with all options
     - Use `colored_print()` for any CLI messages to differentiate them.
     - Have a mock interaction loop:
 
