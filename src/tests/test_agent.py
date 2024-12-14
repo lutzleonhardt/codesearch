@@ -1,5 +1,5 @@
-from agent.llm_agent import Agent
-from agent.schemas import AgentInput, AgentOutput
+from src.agent.llm_agent import Agent
+from src.agent.schemas import AgentInput, AgentOutput
 
 def test_agent_mock_response():
     agent = Agent()
