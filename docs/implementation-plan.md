@@ -180,14 +180,14 @@ Introduce the LLM agent structure. No actual LLM calls yet.
 
 - Run CLI, input a query. You get a yellow `[codesearch] This is a mock response` line.
 
-### Step 5: Incremental Tool Implementation
+### Step 5: Incremental Tool Implementation [PARTLY DONE]
 
 **Goal:**  
 Implement tools one by one and integrate them into the Agent logic. Use colorized CLI output to summarize tool results.
 
 **Tools:**
 
-1. **Directory Tool (`directory.py`)**:
+1. **Directory Tool (`directory.py`)**: [DONE]
 
     - Implement `DirectoryToolRequest(path: str)` and `DirectoryToolResponse(structure: dict)`.
     - `run(path: str)` returns a dict with file/dir info.
