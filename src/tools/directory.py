@@ -23,9 +23,9 @@ class DirectoryPage(TypedDict):
     entries: List[DirEntry]
 
 class DirectoryTool(BaseTool):
-    def get_tool_text_start(self, path: str, limit, max_depth: Optional[int], exclude_dirs: List[str], **kwargs) -> [str, str]:
-        depth_str = f", max_depth: {max_depth}" if max_depth is not None else ""
-        return [f"[Query directory]", f"path: {path}, limit: {limit} entries{depth_str}, exclude_dirs: {str(exclude_dirs)}"]
+    def get_tool_text_start(self, path: str, limit, max_depth: Optional[int], exclude_dirs: List[str], **kwargs) -> List[str]:
+        depth_str = f"max_depth: {max_depth}" if max_depth is not None else ""
+        return ["[Query directory]", f"path: {path}", f"limit: {limit} entries", depth_str, f"exclude_dirs: {str(exclude_dirs)}"]
 
     def get_tool_text_end(self, result: DirectoryPage) -> str:
         return f"total_entries: {result['total_entries']}, returned_entries: {result['returned_entries']}"

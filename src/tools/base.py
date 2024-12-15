@@ -13,12 +13,11 @@ class BaseTool(ABC):
         result = self.get_tool_text_start(**kwargs)
         tool_text = result[0]
         params = result[1:] if len(result) > 1 else []
-        
-        colored_print(tool_text, color="CYAN", colorize_all=True, linebreak=False)
+        print() # new line
+        colored_print(tool_text, color="CYAN", colorize_all=True)
         if params:
-            print()  # Add newline after tool text
             for param in params:
-                colored_print(param, color="CYAN", indent=2)
+                colored_print(param, prefix="            ")
         else:
             print()  # Just newline if no params
 
@@ -34,6 +33,7 @@ class BaseTool(ABC):
             end_text = self.get_tool_text_end(result)
             colored_print(tool_text, color="CYAN", colorize_all=True, linebreak=False)
             print(" " + end_text)
+            print() # new line
         return result
 
     @abstractmethod
