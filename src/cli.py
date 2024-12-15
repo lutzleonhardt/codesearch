@@ -40,16 +40,20 @@ def main(verbose, root_dir, rebuild_ctags):
 
 def print_token_usage(current_cost, total_cost):
     """Print token usage statistics and costs."""
+    print() # new line
     print(f"Tokens: {current_cost.request_tokens/1000:.1f}k sent, {current_cost.response_tokens/1000:.1f}k received. Session cost: {total_cost/1000:.1f}k")
 
+def print_blue_line():
     # Print blue separator line
     terminal_width = os.get_terminal_size().columns
-    print(f"{Fore.BLUE}{Style.BRIGHT}{'━'*terminal_width}{Style.RESET_ALL}")
+    print(f"{Fore.BLUE}{Style.BRIGHT}{'━' * terminal_width}{Style.RESET_ALL}")
+
 
 async def run_interactive_session(deps):
     """Run the interactive session with the agent."""
     previous_messages = []
     total_cost = 0  # Track cumulative cost of tokens
+    print_blue_line()
 
     while True:
         colored_print("Enter query (or 'q' to quit): ", color="BLUE", linebreak=False)
@@ -89,6 +93,7 @@ async def run_interactive_session(deps):
         current_cost = agent_output.cost()
         total_cost = total_cost + current_cost.total_tokens
         print_token_usage(current_cost, total_cost)
+        print_blue_line()
 
         # Log each message
         for msg in agent_output.all_messages():
