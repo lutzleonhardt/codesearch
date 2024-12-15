@@ -55,6 +55,8 @@ async def async_main(verbose, root_dir, rebuild_ctags):
 
         from .agent.llm_agent import agent
         # Create a copy of messages with cleared ToolReturn content
+        # This is to clean up the context for the LLM, we keep only the result
+        # Hint: is is not possible to delete ToolReturn messages from the history
         processed_messages = []
         for msg in previous_messages:
             if msg.role == 'tool-return':
@@ -73,24 +75,26 @@ async def async_main(verbose, root_dir, rebuild_ctags):
             message_history=processed_messages
         )
 
-        # Extract current cost
-        current_cost = agent_output.cost()
-
-        # Print token usage in aider style
-        print(f"Tokens: {current_cost.request_tokens}k sent, {current_cost.response_tokens} received.")
-        
-        # Print blue separator line
-        terminal_width = os.get_terminal_size().columns
-        print(f"{Fore.BLUE}{Style.BRIGHT}{'-' * terminal_width}{Style.RESET_ALL}")
-
-        # Update cumulative cost
-        total_cost = total_cost + current_cost
 
         # Update message history for next iteration
         previous_messages = agent_output.all_messages()
 
         # Print agent answer
         colored_print(agent_output.data.answer, color="GREEN")
+
+        # Extract current cost
+        current_cost = agent_output.cost()
+
+        # Print token usage in aider style
+        #AI!: tokens are not in k, please convert to k
+        print(f"Tokens: {current_cost.request_tokens}k sent, {current_cost.response_tokens} received.")
+
+        # Print blue separator line
+        terminal_width = os.get_terminal_size().columns
+        print(f"{Fore.BLUE}{Style.BRIGHT}{'-' * terminal_width}{Style.RESET_ALL}")
+
+        # Update cumulative cost
+        total_cost = total_cost + current_cost
 
         # Log each message
         for msg in agent_output.all_messages():
