@@ -2,7 +2,7 @@ import asyncio
 import logging
 import os
 import click
-from colorama import init
+from colorama import init, Fore, Style
 from src.agent.prompts import USER_PROMPT
 from src.agent.schemas import Deps
 from src.shared.utils import colored_print
@@ -76,22 +76,15 @@ async def async_main(verbose, root_dir, rebuild_ctags):
         # Extract current cost
         current_cost = agent_output.cost()
 
-        # Print current run cost
-        colored_print(
-            f"Current run cost: request_tokens={current_cost.request_tokens}, "
-            f"response_tokens={current_cost.response_tokens}, total_tokens={current_cost.total_tokens}",
-            color="YELLOW"
-        )
+        # Print token usage in aider style
+        print(f"Tokens: {current_cost.request_tokens}k sent, {current_cost.response_tokens} received.")
+        
+        # Print blue separator line
+        terminal_width = os.get_terminal_size().columns
+        print(f"{Fore.BLUE}{Style.BRIGHT}{'-' * terminal_width}{Style.RESET_ALL}")
 
         # Update cumulative cost
         total_cost = total_cost + current_cost
-
-        # Print cumulative cost so far
-        colored_print(
-            f"Cumulative cost: request_tokens={total_cost.request_tokens}, "
-            f"response_tokens={total_cost.response_tokens}, total_tokens={total_cost.total_tokens}",
-            color="YELLOW"
-        )
 
         # Update message history for next iteration
         previous_messages = agent_output.all_messages()
