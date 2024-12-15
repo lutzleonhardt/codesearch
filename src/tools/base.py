@@ -1,4 +1,6 @@
 from abc import ABC, abstractmethod
+from typing import List
+
 from ..shared import colored_print
 
 class ToolAbortedException(Exception):
@@ -8,6 +10,7 @@ class ToolAbortedException(Exception):
 class BaseTool(ABC):
     def run(self, **kwargs):
         """Base run method that handles user approval and messaging"""
+        #AI!: destruct all other strings starting with the second one (could also be there is not second one) to a List variable; if there are params (list var) then colored_print each of them on a new line
         [tool_text, param_text] = self.get_tool_text_start(**kwargs)
         colored_print(tool_text, color="CYAN", colorize_all=True, linebreak=False)
         print(" " + param_text)
@@ -32,7 +35,7 @@ class BaseTool(ABC):
         pass
 
     @abstractmethod
-    def get_tool_text_start(self, **kwargs) -> [str, str]:
+    def get_tool_text_start(self, **kwargs) -> List[str]:
         """Return the tool description text to show before approval"""
         pass
 
