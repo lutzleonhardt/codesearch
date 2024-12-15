@@ -6,6 +6,7 @@ from colorama import init
 from src.agent.prompts import USER_PROMPT
 from src.agent.schemas import Deps
 from src.shared.utils import colored_print
+from pydantic_ai.result import Cost  # Ensure this import matches your actual project structure
 
 init(autoreset=True)
 
@@ -39,11 +40,12 @@ def main(verbose, root_dir, rebuild_ctags):
 
 async def async_main(verbose, root_dir, rebuild_ctags):
     """Main entry point for codesearch CLI."""
-    logger.info(f"Starting codesearch")
+    logger.info("Starting codesearch")
     deps = Deps(limit=100, project_root=root_dir)
 
     # Store previous messages
     previous_messages = []
+    total_cost = Cost()  # Track cumulative cost of tokens
 
     while True:
         colored_print("Enter query (or 'q' to quit): ", color="BLUE", linebreak=False)
@@ -53,8 +55,6 @@ async def async_main(verbose, root_dir, rebuild_ctags):
 
         from .agent.llm_agent import agent
         # Create a copy of messages with cleared ToolReturn content
-        # This is to clean up the context for the LLM, we keep only the result
-        # Hint: is is not possible to delete ToolReturn messages from the history
         processed_messages = []
         for msg in previous_messages:
             if msg.role == 'tool-return':
@@ -73,12 +73,33 @@ async def async_main(verbose, root_dir, rebuild_ctags):
             message_history=processed_messages
         )
 
+        # Extract current cost
+        current_cost = agent_output.cost()
+
+        # Print current run cost
+        colored_print(
+            f"Current run cost: request_tokens={current_cost.request_tokens}, "
+            f"response_tokens={current_cost.response_tokens}, total_tokens={current_cost.total_tokens}",
+            color="YELLOW"
+        )
+
+        # Update cumulative cost
+        total_cost = total_cost + current_cost
+
+        # Print cumulative cost so far
+        colored_print(
+            f"Cumulative cost: request_tokens={total_cost.request_tokens}, "
+            f"response_tokens={total_cost.response_tokens}, total_tokens={total_cost.total_tokens}",
+            color="YELLOW"
+        )
+
         # Update message history for next iteration
         previous_messages = agent_output.all_messages()
 
+        # Print agent answer
         colored_print(agent_output.data.answer, color="GREEN")
 
-        # Log each message separately for better readability
+        # Log each message
         for msg in agent_output.all_messages():
             logger.info(f"Message ({msg.role}): {msg}")
 
