@@ -55,7 +55,7 @@ def directory(ctx: RunContext[Deps], relative_path_from_project_root: str, max_d
             exclude_dirs = ["node_modules", "venv", "bin", "dist", ".git", ".svn", "__pycache__"]
         full_path = os.path.normpath(os.path.join(ctx.deps.project_root, relative_path_from_project_root))
         logger.info(f"Scanning directory at {full_path} with max_depth={max_depth}")
-        result = directory_tool.run(path=full_path, limit=ctx.deps.limit, max_depth=max_depth, exclude_dirs=exclude_dirs)
+        result = directory_tool.run(path=full_path, limit=ctx.deps.limit, max_depth=max_depth, exclude_dirs=exclude_dirs, verbose=ctx.deps.verbose)
         logger.debug(f"Found {result['total_entries']} entries, returning {result['returned_entries']}")
         return PartialContent(
             total_length=result["total_entries"],

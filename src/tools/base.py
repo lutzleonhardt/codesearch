@@ -29,6 +29,10 @@ class BaseTool(ABC):
             raise ToolAbortedException("Operation aborted by user")
 
         result = self._run(**kwargs)
+
+        if kwargs.get('verbose') and result:
+            self.print_verbose_output(result)
+
         if result:
             end_text = self.get_tool_text_end(result)
             colored_print(tool_text, color="CYAN", colorize_all=True, linebreak=False)
@@ -49,4 +53,9 @@ class BaseTool(ABC):
     @abstractmethod
     def get_tool_text_end(self, result) -> [str, str]:
         """Return the tool description text to show after completion"""
+        pass
+
+    @abstractmethod
+    def print_verbose_output(self, result):
+        """Print detailed tool output when verbose mode is enabled"""
         pass

@@ -5,6 +5,7 @@ from pydantic import BaseModel
 
 T = TypeVar('T')
 
+
 @dataclass
 class PartialContent(Generic[T]):
     """Generic wrapper for partial content responses"""
@@ -22,14 +23,15 @@ class PartialContent(Generic[T]):
     def missing_length(self) -> int:
         return self.total_length - self.returned_length
 
+
 @dataclass
 class Deps:
     """Dependencies for the agent"""
     limit: int = 100
     project_root: str = "."
+    verbose: bool = False
+
 
 class AgentOutput(BaseModel):
     answer: str
     error_tool_call: str
-
-

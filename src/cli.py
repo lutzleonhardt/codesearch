@@ -103,7 +103,7 @@ async def async_main(verbose, root_dir, rebuild_ctags):
     """Main entry point for codesearch CLI."""
     logger.info("Starting codesearch")
     try:
-        deps = Deps(limit=100, project_root=root_dir)
+        deps = Deps(limit=100, project_root=root_dir, verbose=verbose)
         await run_interactive_session(deps)
     except Exception as e:
         logger.error(f"An error occurred: {str(e)}", exc_info=True)

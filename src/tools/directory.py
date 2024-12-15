@@ -6,8 +6,10 @@ from datetime import datetime
 from typing import List, TypedDict, Optional
 
 from .base import BaseTool
+from ..shared import colored_print
 
 logger = logging.getLogger(__name__)
+
 
 class DirEntry(TypedDict):
     """Represents either a file or directory entry in a flattened structure."""
@@ -16,21 +18,49 @@ class DirEntry(TypedDict):
     size: int
     modified: str
 
+
+
 class DirectoryPage(TypedDict):
     """Page of directory entries."""
     total_entries: int
     returned_entries: int
     entries: List[DirEntry]
 
+
+
 class DirectoryTool(BaseTool):
-    def get_tool_text_start(self, path: str, limit, max_depth: Optional[int], exclude_dirs: List[str], **kwargs) -> List[str]:
+    def print_verbose_output(self, result: DirectoryPage):
+        """Print detailed directory scan results in yellow color"""
+        for entry in result['entries']:
+            entry_type = entry['type'].ljust(10)
+            path = entry['path']
+            size = f"size={entry['size']}"
+            modified = f"modified={entry['modified']}"
+            colored_print(f"{entry_type} {path} ({size}, {modified})", color="YELLOW")
+
+    def get_tool_text_start(
+        self, path: str, limit: int, max_depth: Optional[int], exclude_dirs: List[str], **kwargs
+    ) -> List[str]:
         depth_str = f"max_depth: {max_depth}" if max_depth is not None else ""
-        return ["[Query directory]", f"path: {path}", f"limit: {limit} entries", depth_str, f"exclude_dirs: {str(exclude_dirs)}"]
+        return [
+            "[Query directory]",
+            f"path: {path}",
+            f"limit: {limit} entries",
+            depth_str,
+            f"exclude_dirs: {str(exclude_dirs)}"
+        ]
 
     def get_tool_text_end(self, result: DirectoryPage) -> str:
         return f"total_entries: {result['total_entries']}, returned_entries: {result['returned_entries']}"
 
-    def _run(self, path: str, limit: int = 50, max_depth: Optional[int] = None, exclude_dirs: List[str] = None) -> DirectoryPage:
+    def _run(
+        self,
+        path: str,
+        limit: int = 50,
+        max_depth: Optional[int] = None,
+        exclude_dirs: List[str] = None,
+        **kwargs
+    ) -> DirectoryPage:
         """
         Return a flattened list of directory entries starting from a given path,
         limited by a maximum traversal depth and optionally excluding certain directories.
@@ -46,7 +76,10 @@ class DirectoryTool(BaseTool):
             # If not specified, treat as unlimited depth.
             max_depth = 999999  # effectively no limit
 
-        logger.info(f"Running directory tool with path: {path}, limit: {limit}, max_depth: {max_depth}")
+        logger.info(
+            f"Running directory tool with path: {path}, "
+            f"limit: {limit}, max_depth: {max_depth}"
+        )
 
         all_entries = []
         self._flatten_helper(path, exclude_dirs, all_entries, current_depth=0, max_depth=max_depth)
@@ -62,8 +95,14 @@ class DirectoryTool(BaseTool):
         logger.info(f"Directory entries (truncated to {limit}): {result}")
         return result
 
-    def _flatten_helper(self, path: str, exclude_dirs: List[str], flattened: List[DirEntry],
-                        current_depth: int, max_depth: int):
+    def _flatten_helper(
+        self,
+        path: str,
+        exclude_dirs: List[str],
+        flattened: List[DirEntry],
+        current_depth: int,
+        max_depth: int
+    ):
         """
         Recursively traverse the directory structure up to max_depth, adding entries to flattened list.
 
@@ -124,7 +163,9 @@ class DirectoryTool(BaseTool):
                     "modified": datetime.fromtimestamp(stat.st_mtime).isoformat()
                 })
             except PermissionError as e:
-                logger.warning(f"Permission denied accessing {file_entry.path}: {e}")
+                logger.warning(
+                    f"Permission denied accessing {file_entry.path}: {e}"
+                )
                 # Skip this file
             except OSError as e:
                 logger.error(f"Error accessing {file_entry.path}: {e}")
