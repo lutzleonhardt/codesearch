@@ -10,10 +10,17 @@ class ToolAbortedException(Exception):
 class BaseTool(ABC):
     def run(self, **kwargs):
         """Base run method that handles user approval and messaging"""
-        #AI!: destruct all other strings starting with the second one (could also be there is not second one) to a List variable; if there are params (list var) then colored_print each of them on a new line
-        [tool_text, param_text] = self.get_tool_text_start(**kwargs)
+        result = self.get_tool_text_start(**kwargs)
+        tool_text = result[0]
+        params = result[1:] if len(result) > 1 else []
+        
         colored_print(tool_text, color="CYAN", colorize_all=True, linebreak=False)
-        print(" " + param_text)
+        if params:
+            print()  # Add newline after tool text
+            for param in params:
+                colored_print(param, color="CYAN", indent=2)
+        else:
+            print()  # Just newline if no params
 
         colored_print("Accept? (y/n) [y]: ", color="BLUE", linebreak=False)
         response = input().lower()
