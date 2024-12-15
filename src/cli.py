@@ -90,7 +90,7 @@ async def async_main(verbose, root_dir, rebuild_ctags):
 
         # Print blue separator line
         terminal_width = os.get_terminal_size().columns
-        print(f"{Fore.BLUE}{Style.BRIGHT}{'-'*terminal_width}{Style.RESET_ALL}")
+        print(f"{Fore.BLUE}{Style.BRIGHT}{'━'*terminal_width}{Style.RESET_ALL}")
 
         # Update cumulative cost
         total_cost = total_cost + current_cost.total_tokens
