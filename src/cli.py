@@ -56,9 +56,9 @@ async def run_interactive_session(deps):
     print_blue_line()
 
     while True:
-        colored_print("Enter query (or 'q' to quit): ", color="BLUE", linebreak=False)
+        colored_print("Enter query ('/exit' to quit): ", color="BLUE", linebreak=False)
         user_input = input()
-        if user_input.lower() == 'q':
+        if user_input.lower() == '/exit':
             break
 
         from .agent.llm_agent import agent
