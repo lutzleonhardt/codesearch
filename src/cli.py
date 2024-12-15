@@ -41,11 +41,12 @@ def main(verbose, root_dir, rebuild_ctags):
 def print_token_usage(current_cost, total_cost):
     """Print token usage statistics and costs."""
     print(f"Tokens: {current_cost.request_tokens/1000:.1f}k sent, {current_cost.response_tokens/1000:.1f}k received. Session cost: {total_cost/1000:.1f}k")
-    
+
     # Print blue separator line
     terminal_width = os.get_terminal_size().columns
     print(f"{Fore.BLUE}{Style.BRIGHT}{'━'*terminal_width}{Style.RESET_ALL}")
 
+#AI! try catch this function and log if error. Please create a new function for the try-catch block. I do not wand an additional nesting/identation here
 async def async_main(verbose, root_dir, rebuild_ctags):
     """Main entry point for codesearch CLI."""
     logger.info("Starting codesearch")
