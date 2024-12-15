@@ -46,15 +46,10 @@ def print_token_usage(current_cost, total_cost):
     terminal_width = os.get_terminal_size().columns
     print(f"{Fore.BLUE}{Style.BRIGHT}{'━'*terminal_width}{Style.RESET_ALL}")
 
-#AI! try catch this function and log if error. Please create a new function for the try-catch block. I do not wand an additional nesting/identation here
-async def async_main(verbose, root_dir, rebuild_ctags):
-    """Main entry point for codesearch CLI."""
-    logger.info("Starting codesearch")
-    deps = Deps(limit=100, project_root=root_dir)
-
-    # Store previous messages
+async def run_interactive_session(deps):
+    """Run the interactive session with the agent."""
     previous_messages = []
-    total_cost = 0 # Track cumulative cost of tokens
+    total_cost = 0  # Track cumulative cost of tokens
 
     while True:
         colored_print("Enter query (or 'q' to quit): ", color="BLUE", linebreak=False)
@@ -84,7 +79,6 @@ async def async_main(verbose, root_dir, rebuild_ctags):
             message_history=processed_messages
         )
 
-
         # Update message history for next iteration
         previous_messages = agent_output.all_messages()
 
@@ -99,6 +93,16 @@ async def async_main(verbose, root_dir, rebuild_ctags):
         # Log each message
         for msg in agent_output.all_messages():
             logger.info(f"Message ({msg.role}): {msg}")
+
+async def async_main(verbose, root_dir, rebuild_ctags):
+    """Main entry point for codesearch CLI."""
+    logger.info("Starting codesearch")
+    try:
+        deps = Deps(limit=100, project_root=root_dir)
+        await run_interactive_session(deps)
+    except Exception as e:
+        logger.error(f"An error occurred: {str(e)}", exc_info=True)
+        colored_print(f"Error: {str(e)}", color="RED")
 
 if __name__ == "__main__":
     main()  # This will now properly handle the async execution
