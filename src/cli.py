@@ -88,10 +88,9 @@ async def async_main(verbose, root_dir, rebuild_ctags):
         # Print token usage in aider style
         print(f"Tokens: {current_cost.request_tokens/1000:.1f}k sent, {current_cost.response_tokens/1000:.1f}k received. Session cost: ${total_cost:1000:.1f}k")
 
-        #AI!: I do not want this blue line to have little distances between the dashes
         # Print blue separator line
         terminal_width = os.get_terminal_size().columns
-        print(f"{Fore.BLUE}{Style.BRIGHT}{'-' * terminal_width}{Style.RESET_ALL}")
+        print(f"{Fore.BLUE}{Style.BRIGHT}{'-'*terminal_width}{Style.RESET_ALL}")
 
         # Update cumulative cost
         total_cost = total_cost + current_cost.total_tokens
