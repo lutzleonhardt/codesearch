@@ -86,8 +86,7 @@ async def async_main(verbose, root_dir, rebuild_ctags):
         current_cost = agent_output.cost()
 
         # Print token usage in aider style
-        #AI!: tokens are not in k, please convert to k
-        print(f"Tokens: {current_cost.request_tokens}k sent, {current_cost.response_tokens} received.")
+        print(f"Tokens: {current_cost.request_tokens}k sent, {current_cost.response_tokens/1000:.1f}k received.")
 
         # Print blue separator line
         terminal_width = os.get_terminal_size().columns
