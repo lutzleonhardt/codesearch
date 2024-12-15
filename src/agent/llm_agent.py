@@ -12,6 +12,7 @@ from .prompts import SYSTEM_PROMPT, ASSISTANT_PROMPT
 from .schemas import AgentOutput, Deps, PartialContent
 from ..config.settings import API_KEY, MODEL
 from ..tools.directory import DirectoryTool, DirEntry, DirectoryPage
+from ..tools.ctags import CtagsTool, CtagsPage, CtagsEntry
 
 # Type alias for directory response
 DirectoryResponse: TypeAlias = PartialContent[DirectoryPage]
@@ -37,8 +38,8 @@ agent = Agent(
 logger = logging.getLogger(__name__)
 
 @agent.tool
-def directory(ctx: RunContext[Deps], relative_path_from_project_root: str, max_depth: int, exclude_dirs = None) -> DirectoryResponse:
-    """Get the directory structure at the given path.
+def directory(ctx: RunContext[Deps], relative_path_from_project_root: str, max_depth: int, exclude_dirs = None) -> PartialContent[DirectoryResponse]:
+    """Get the directory structure at the given path. The result could be truncated (see result_is_complete).
 
     Args:
         ctx: The run context with dependencies
@@ -47,7 +48,7 @@ def directory(ctx: RunContext[Deps], relative_path_from_project_root: str, max_d
         exclude_dirs: A list of directories to exclude from the directory tree, defaults to ["node_modules", "venv", "bin", "dist", ".git", ".svn", "__pycache__"]
 
     Returns:
-        PartialContent: A paginated response containing the directory structure
+        PartialContent[List[CtagsEntry]]: A paginated response containing the directory structure. The result could be truncated (see result_is_complete).
     """
     directory_tool = DirectoryTool()
     try:
@@ -57,11 +58,13 @@ def directory(ctx: RunContext[Deps], relative_path_from_project_root: str, max_d
         logger.info(f"Scanning directory at {full_path} with max_depth={max_depth}")
         result = directory_tool.run(path=full_path, limit=ctx.deps.limit, max_depth=max_depth, exclude_dirs=exclude_dirs, verbose=ctx.deps.verbose)
         logger.debug(f"Found {result['total_entries']} entries, returning {result['returned_entries']}")
+        result_is_complete = result["returned_entries"] == result["total_entries"]
         return PartialContent(
             total_length=result["total_entries"],
             returned_length=result["returned_entries"],
             content=result["entries"],
-            error=False
+            error=False,
+            result_is_complete=result_is_complete
         )
     except ToolAbortedException:
         logger.info(f"Directory scanning aborted for {relative_path_from_project_root}")
@@ -70,7 +73,8 @@ def directory(ctx: RunContext[Deps], relative_path_from_project_root: str, max_d
             returned_length=0,
             content=[],
             error=False,
-            aborted=True
+            aborted=True,
+            result_is_complete=result_is_complete
         )
     except Exception as e:
         logger.error(f"Error scanning directory {relative_path_from_project_root}: {str(e)}")
@@ -79,6 +83,66 @@ def directory(ctx: RunContext[Deps], relative_path_from_project_root: str, max_d
             returned_length=0,
             content=[],
             error=True,
-            aborted=False
+            aborted=False,
+            result_is_complete=result_is_complete
         )
 
+@agent.tool
+def ctags_readtags_tool(ctx: RunContext[Deps], action: str, relative_path_from_project_root: str = "", symbol: str = "", kind: str = "") -> PartialContent[List[CtagsEntry]]:
+    """
+    Query tags using universal-ctags and readtags utilities. This tool provides structured access to ctags and readtags functionalities.
+    You can use it to generate tags, query symbols, and filter results by kind. You need always to first generate the tags file using the 'generate_tags' action.
+    The result could be truncated (see result_is_complete).
+    Actions:
+        - 'generate_tags': Generate or update a tags file for 'input_file' (file or directory).
+        - 'find_symbol': Search for a specific 'symbol' in the tags file.
+        - 'list_symbols': List all symbols in the tags file.
+        - 'filter_by_kind': List all symbols of a given 'kind' (e.g. 'function', 'class').
+
+    Args:
+        action (str): The action to perform.
+        relative_path_from_project_root (str): The file or directory to generate tags from (required for 'generate_tags').
+        symbol (str): The symbol to search for ('find_symbol' only).
+        kind (str): The kind of symbol to filter by ('filter_by_kind' only).
+
+    Returns:
+    A PartialContent[List[CtagsEntry]] object with a list of tag entries. The result could be truncated (see result_is_complete).
+    """
+    input_file = os.path.normpath(os.path.join(ctx.deps.project_root, relative_path_from_project_root))
+    ctags_tool = CtagsTool()
+    try:
+        result = ctags_tool.run(
+            action=action,
+            input_file=input_file,
+            symbol=symbol,
+            kind=kind,
+            limit=ctx.deps.limit,
+            verbose=ctx.deps.verbose
+        )
+        result_is_complete = result["returned_entries"] == result["total_entries"]
+        return PartialContent(
+            total_length=result["total_entries"],
+            returned_length=result["returned_entries"],
+            content=result["entries"],
+            error=False,
+            result_is_complete=result_is_complete
+        )
+    except ToolAbortedException:
+        return PartialContent(
+            total_length=0,
+            returned_length=0,
+            content=[],
+            error=False,
+            aborted=True,
+            result_is_complete=result_is_complete
+        )
+    except Exception as e:
+        logger.error(f"Error in ctags tool: {str(e)}")
+        return PartialContent(
+            total_length=0,
+            returned_length=0,
+            content=[],
+            error=True,
+            aborted=False,
+            result_is_complete=result_is_complete
+        )

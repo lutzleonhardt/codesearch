@@ -14,14 +14,11 @@ class PartialContent(Generic[T]):
     content: T
     error: bool = False
     aborted: bool = False
+    result_is_complete: bool = True
 
-    @property
-    def is_complete(self) -> bool:
-        return self.returned_length == self.total_length
-
-    @property
-    def missing_length(self) -> int:
-        return self.total_length - self.returned_length
+    #@property
+    #def result_is_complete(self) -> bool:
+    #    return self.returned_length == self.total_length
 
 
 @dataclass
