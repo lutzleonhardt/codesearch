@@ -33,10 +33,10 @@ logger = logging.getLogger(__name__)
 @click.command()
 @click.option('--verbose', is_flag=True, default=False, help='Enable verbose output')
 @click.option('--root-dir', default='.', help='Root directory to explore')
-@click.option('--rebuild-ctags', is_flag=True, default=False, help='Rebuild ctags index on every tool call')
-def main(verbose, root_dir, rebuild_ctags):
+@click.option('--tools-result-limit', default=200, help='Maximum number of results (lines) to return for tools')
+def main(verbose, root_dir, tools_result_limit):
     """Main entry point for codesearch CLI."""
-    return asyncio.run(async_main(verbose, root_dir, rebuild_ctags))
+    return asyncio.run(async_main(verbose, root_dir, tools_result_limit))
 
 def print_token_usage(current_cost, total_cost):
     """Print token usage statistics and costs."""
@@ -99,11 +99,11 @@ async def run_interactive_session(deps):
         for msg in agent_output.all_messages():
             logger.info(f"Message ({msg.role}): {msg}")
 
-async def async_main(verbose, root_dir, rebuild_ctags):
+async def async_main(verbose, root_dir, tools_result_limit):
     """Main entry point for codesearch CLI."""
     logger.info("Starting codesearch")
     try:
-        deps = Deps(limit=100, project_root=root_dir, verbose=verbose)
+        deps = Deps(limit=tools_result_limit, project_root=root_dir, verbose=verbose)
         await run_interactive_session(deps)
     except Exception as e:
         logger.error(f"An error occurred: {str(e)}", exc_info=True)
