@@ -25,20 +25,21 @@ class CtagsTool(BaseTool):
             colored_print(f"{entry['kind']} {entry['symbol']} @ {entry['file']} line {entry['line']}", color="YELLOW")
 
     #AI: add the exclusion list as a method parameter to print it here (do it like in directory.py)
-    def get_tool_text_start(self, action: str, input_file: str = "", symbol: str = "", kind: str = "", **kwargs) -> List[str]:
+    def get_tool_text_start(self, action: str, input_file: str = "", symbol: str = "", kind: str = "", exclude_dirs: List[str] = None, **kwargs) -> List[str]:
         return [
             "Query ctags",
             f"action: {action}",
             f"input_file: {input_file}",
             f"symbol: {symbol}",
-            f"kind: {kind}"
+            f"kind: {kind}",
+            f"exclude_dirs: {str(exclude_dirs)}"
         ]
 
     def get_tool_text_end(self, result: CtagsPage) -> str:
         return f"total_entries: {result['total_entries']}, returned_entries: {result['returned_entries']}"
 
     #AI: add the exclusion list as a method parameter<
-    def _run(self, action: str, input_file: str = "", symbol: str = "", kind: str = "", limit: int = 50, **kwargs) -> CtagsPage:
+    def _run(self, action: str, input_file: str = "", symbol: str = "", kind: str = "", limit: int = 50, exclude_dirs: List[str] = None, **kwargs) -> CtagsPage:
         """Run ctags/readtags actions."""
         # Run actions based on provided parameters
         tags_file = os.path.join(input_file, 'tags') if os.path.isdir(input_file) else 'tags'
@@ -48,7 +49,11 @@ class CtagsTool(BaseTool):
             # Example: universal-ctags command (recursive)
             # Adjust as needed for your environment
             #AI: I want to pass a exclusion list if provided as a parameter (ctags -R --exclude=.git --exclude=.hg) (do it like in directory.py)
-            cmd = ["ctags", "-R", "-f", tags_file, input_file]
+            cmd = ["ctags", "-R", "-f", tags_file]
+            if exclude_dirs:
+                for exclude_dir in exclude_dirs:
+                    cmd.extend(["--exclude", exclude_dir])
+            cmd.append(input_file)
             self._run_command(cmd)
             # After generation, no entries returned
             return {"total_entries": 0, "returned_entries": 0, "entries": []}

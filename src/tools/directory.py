@@ -27,7 +27,6 @@ class DirectoryPage(TypedDict):
     entries: List[DirEntry]
 
 
-#AI: this acts only ad reference file
 class DirectoryTool(BaseTool):
     def print_verbose_output(self, result: DirectoryPage):
         """Print detailed directory scan results in yellow color"""

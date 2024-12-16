@@ -85,9 +85,8 @@ def directory(ctx: RunContext[Deps], relative_path_from_project_root: str, max_d
             aborted=False,
         )
 
-#AI!: add the exclusion list as a method parameter exclude_dirs = None and pass it ctags_tool.run
 @agent.tool
-def ctags_readtags_tool(ctx: RunContext[Deps], action: str, relative_path_from_project_root: str = "", symbol: str = "", kind: str = "") -> PartialContent[List[CtagsEntry]]:
+def ctags_readtags_tool(ctx: RunContext[Deps], action: str, relative_path_from_project_root: str = "", symbol: str = "", kind: str = "", exclude_dirs: List[str] = None) -> PartialContent[List[CtagsEntry]]:
     """
     Query tags using universal-ctags and readtags utilities. This tool provides structured access to ctags and readtags functionalities.
     You can use it to generate tags, query symbols, and filter results by kind. You need ALWAYS to first generate the tags file using the 'generate_tags' action.
@@ -116,7 +115,8 @@ def ctags_readtags_tool(ctx: RunContext[Deps], action: str, relative_path_from_p
             symbol=symbol,
             kind=kind,
             limit=ctx.deps.limit,
-            verbose=ctx.deps.verbose
+            verbose=ctx.deps.verbose,
+            exclude_dirs=exclude_dirs
         )
         result_is_complete = result["returned_entries"] == result["total_entries"]
         return PartialContent(
