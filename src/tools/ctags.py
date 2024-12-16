@@ -63,8 +63,11 @@ class CtagsTool(BaseTool):
             if not symbol:
                 logger.error("No symbol provided for 'find_symbol'.")
                 return {"total_entries": 0, "returned_entries": 0, "entries": []}
-            # Direct symbol lookup with case insensitive matching
-            cmd = base_cmd + ["-i", symbol]
+            # Direct symbol lookup with case insensitive matching and optional kind filtering
+            if kind:
+                cmd = base_cmd + ["-i", symbol, "-Q", f"kind == '{kind}'"]
+            else:
+                cmd = base_cmd + ["-i", symbol]
 
         elif action == 'list_symbols':
             # List all symbols
@@ -74,8 +77,11 @@ class CtagsTool(BaseTool):
             if not kind:
                 logger.error("No kind provided for 'filter_by_kind'.")
                 return {"total_entries": 0, "returned_entries": 0, "entries": []}
-            # List all and filter by kind using -Q filter expression
-            cmd = base_cmd + ["--list", "-Q", f"kind == '{kind}'"]
+            # List all and filter by kind using -Q filter expression, with optional symbol filtering
+            if symbol:
+                cmd = base_cmd + ["--list", "-Q", f"kind == '{kind}'", "-i", symbol]
+            else:
+                cmd = base_cmd + ["--list", "-Q", f"kind == '{kind}'"]
 
         else:
             logger.error(f"Unknown action: {action}")
