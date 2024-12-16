@@ -61,6 +61,7 @@ async def run_interactive_session(deps):
         if user_input.lower() == '/exit':
             break
 
+        print() # new line
         from .agent.llm_agent import agent
         # Create a copy of messages with cleared ToolReturn content
         # This is to clean up the context for the LLM, we keep only the result
