@@ -24,6 +24,8 @@ class BaseTool(ABC):
         response = input().lower()
         if response != 'y' and response != '':
             colored_print(f"[{tool_text} - aborted]", color="RED", colorize_all=True, linebreak=False)
+            print() # new line
+            print() # new line
             raise ToolAbortedException("Operation aborted by user")
 
         result = self._run(**kwargs)
