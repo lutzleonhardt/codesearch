@@ -2,7 +2,7 @@ import logging
 import os
 from typing import List, TypedDict
 
-from .base import BaseTool
+from .base import BaseTool, ToolAbortedException
 from ..shared import colored_print
 
 logger = logging.getLogger(__name__)
@@ -26,7 +26,7 @@ class CtagsTool(BaseTool):
 
     def get_tool_text_start(self, action: str, input_file: str = "", symbol: str = "", kind: str = "", **kwargs) -> List[str]:
         return [
-            "[Query ctags]",
+            "Query ctags",
             f"action: {action}",
             f"input_file: {input_file}",
             f"symbol: {symbol}",
@@ -53,7 +53,8 @@ class CtagsTool(BaseTool):
         # For readtags-based queries, ensure tags file exists
         if not os.path.exists(tags_file):
             logger.error("No tags file found. Run 'generate_tags' first.")
-            return {"total_entries": 0, "returned_entries": 0, "entries": []}
+            #return {"total_entries": 0, "returned_entries": 0, "entries": []}
+            raise ToolAbortedException("No tags file found. Run 'generate_tags' first.")
 
         # Base command with extension fields and line numbers
         base_cmd = ["readtags", "-t", tags_file, "-e", "-n"]

@@ -43,7 +43,7 @@ class DirectoryTool(BaseTool):
     ) -> List[str]:
         depth_str = f"max_depth: {max_depth}" if max_depth is not None else ""
         return [
-            "[Query directory]",
+            "Query directory",
             f"path: {path}",
             f"limit: {limit} entries",
             depth_str,

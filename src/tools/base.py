@@ -13,19 +13,17 @@ class BaseTool(ABC):
         result = self.get_tool_text_start(**kwargs)
         tool_text = result[0]
         params = result[1:] if len(result) > 1 else []
-        print() # new line
-        colored_print(tool_text, color="CYAN", colorize_all=True)
+        colored_print(f"[{tool_text} - start]", color="CYAN", colorize_all=True)
         if params:
             for param in params:
                 colored_print(param, prefix="            ")
         else:
             print()  # Just newline if no params
 
-        colored_print("Accept? (y/n) [y]: ", color="BLUE", linebreak=False)
+        colored_print("Accept? (y/n) [y]: ", color="CYAN", linebreak=False)
         response = input().lower()
         if response != 'y' and response != '':
-            colored_print(tool_text, color="CYAN", colorize_all=True, linebreak=False)
-            print(" Aborted")
+            colored_print(f"[{tool_text} - aborted]", color="RED", colorize_all=True, linebreak=False)
             raise ToolAbortedException("Operation aborted by user")
 
         result = self._run(**kwargs)
@@ -35,7 +33,7 @@ class BaseTool(ABC):
 
         if result:
             end_text = self.get_tool_text_end(result)
-            colored_print(tool_text, color="CYAN", colorize_all=True, linebreak=False)
+            colored_print(f"[{tool_text} - end]", color="CYAN", colorize_all=True, linebreak=False)
             print(" " + end_text)
             print() # new line
         return result
