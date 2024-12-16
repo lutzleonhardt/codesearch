@@ -24,6 +24,7 @@ class CtagsTool(BaseTool):
         for entry in result['entries']:
             colored_print(f"{entry['kind']} {entry['symbol']} @ {entry['file']} line {entry['line']}", color="YELLOW")
 
+    #AI: add the exclusion list as a method parameter to print it here (do it like in directory.py)
     def get_tool_text_start(self, action: str, input_file: str = "", symbol: str = "", kind: str = "", **kwargs) -> List[str]:
         return [
             "Query ctags",
@@ -36,6 +37,7 @@ class CtagsTool(BaseTool):
     def get_tool_text_end(self, result: CtagsPage) -> str:
         return f"total_entries: {result['total_entries']}, returned_entries: {result['returned_entries']}"
 
+    #AI: add the exclusion list as a method parameter<
     def _run(self, action: str, input_file: str = "", symbol: str = "", kind: str = "", limit: int = 50, **kwargs) -> CtagsPage:
         """Run ctags/readtags actions."""
         # Run actions based on provided parameters
@@ -45,6 +47,7 @@ class CtagsTool(BaseTool):
             # Generate/update tags file
             # Example: universal-ctags command (recursive)
             # Adjust as needed for your environment
+            #AI: I want to pass a exclusion list if provided as a parameter (ctags -R --exclude=.git --exclude=.hg) (do it like in directory.py)
             cmd = ["ctags", "-R", "-f", tags_file, input_file]
             self._run_command(cmd)
             # After generation, no entries returned

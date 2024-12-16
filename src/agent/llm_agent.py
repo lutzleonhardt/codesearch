@@ -85,6 +85,7 @@ def directory(ctx: RunContext[Deps], relative_path_from_project_root: str, max_d
             aborted=False,
         )
 
+#AI!: add the exclusion list as a method parameter exclude_dirs = None and pass it ctags_tool.run
 @agent.tool
 def ctags_readtags_tool(ctx: RunContext[Deps], action: str, relative_path_from_project_root: str = "", symbol: str = "", kind: str = "") -> PartialContent[List[CtagsEntry]]:
     """
