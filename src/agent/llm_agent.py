@@ -74,7 +74,6 @@ def directory(ctx: RunContext[Deps], relative_path_from_project_root: str, max_d
             content=[],
             error=False,
             aborted=True,
-            result_is_complete=result_is_complete
         )
     except Exception as e:
         logger.error(f"Error scanning directory {relative_path_from_project_root}: {str(e)}")
@@ -84,14 +83,13 @@ def directory(ctx: RunContext[Deps], relative_path_from_project_root: str, max_d
             content=[],
             error=True,
             aborted=False,
-            result_is_complete=result_is_complete
         )
 
 @agent.tool
 def ctags_readtags_tool(ctx: RunContext[Deps], action: str, relative_path_from_project_root: str = "", symbol: str = "", kind: str = "") -> PartialContent[List[CtagsEntry]]:
     """
     Query tags using universal-ctags and readtags utilities. This tool provides structured access to ctags and readtags functionalities.
-    You can use it to generate tags, query symbols, and filter results by kind. You need always to first generate the tags file using the 'generate_tags' action.
+    You can use it to generate tags, query symbols, and filter results by kind. You need ALWAYS to first generate the tags file using the 'generate_tags' action.
     The result could be truncated (see result_is_complete).
     Actions:
         - 'generate_tags': Generate or update a tags file for 'input_file' (file or directory).
@@ -134,7 +132,6 @@ def ctags_readtags_tool(ctx: RunContext[Deps], action: str, relative_path_from_p
             content=[],
             error=False,
             aborted=True,
-            result_is_complete=result_is_complete
         )
     except Exception as e:
         logger.error(f"Error in ctags tool: {str(e)}")
@@ -144,5 +141,4 @@ def ctags_readtags_tool(ctx: RunContext[Deps], action: str, relative_path_from_p
             content=[],
             error=True,
             aborted=False,
-            result_is_complete=result_is_complete
         )
