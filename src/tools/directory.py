@@ -1,5 +1,6 @@
 # /home/lutz/PycharmProjects/codesearch/src/tools/directory.py
 
+import fnmatch
 import logging
 import os
 from datetime import datetime
@@ -38,15 +39,17 @@ class DirectoryTool(BaseTool):
             colored_print(f"{entry_type} {path} ({size}, {modified})", color="YELLOW")
 
     def get_tool_text_start(
-        self, path: str, limit: int, max_depth: Optional[int], exclude_dirs: List[str], **kwargs
+        self, path: str, limit: int, max_depth: Optional[int], exclude_dirs: List[str], file_filter: Optional[str] = None, **kwargs
     ) -> List[str]:
         depth_str = f"max_depth: {max_depth}" if max_depth is not None else ""
+        filter_str = f"file_filter: {file_filter}" if file_filter is not None else ""
         return [
             "Query directory",
             f"path: {path}",
             f"limit: {limit} entries",
             depth_str,
-            f"exclude_dirs: {str(exclude_dirs)}"
+            f"exclude_dirs: {str(exclude_dirs)}",
+            filter_str
         ]
 
     def get_tool_text_end(self, result: DirectoryPage) -> str:
@@ -58,6 +61,7 @@ class DirectoryTool(BaseTool):
         limit: int = 50,
         max_depth: Optional[int] = None,
         exclude_dirs: List[str] = None,
+        file_filter: Optional[str] = None,
         **kwargs
     ) -> DirectoryPage:
         """
@@ -81,7 +85,7 @@ class DirectoryTool(BaseTool):
         )
 
         all_entries = []
-        self._flatten_helper(path, exclude_dirs, all_entries, current_depth=0, max_depth=max_depth)
+        self._flatten_helper(path, exclude_dirs, all_entries, current_depth=0, max_depth=max_depth, file_filter=file_filter)
 
         total = len(all_entries)
         truncated = all_entries[:limit]
@@ -100,7 +104,8 @@ class DirectoryTool(BaseTool):
         exclude_dirs: List[str],
         flattened: List[DirEntry],
         current_depth: int,
-        max_depth: int
+        max_depth: int,
+        file_filter: Optional[str] = None
     ):
         """
         Recursively traverse the directory structure up to max_depth, adding entries to flattened list.
@@ -111,6 +116,10 @@ class DirectoryTool(BaseTool):
         :param current_depth: Current traversal depth.
         :param max_depth: Maximum depth allowed.
         """
+        # Stop if we've exceeded max depth
+        if current_depth > max_depth:
+            return
+
         # Add current directory entry
         try:
             dir_stat = os.stat(path)
@@ -120,15 +129,8 @@ class DirectoryTool(BaseTool):
                 "size": 0,
                 "modified": datetime.fromtimestamp(dir_stat.st_mtime).isoformat()
             })
-        except PermissionError as e:
-            logger.warning(f"Permission denied accessing {path}: {e}")
-            return
-        except OSError as e:
-            logger.error(f"Error accessing {path}: {e}")
-            return
-
-        # If we've reached max depth, don't go deeper
-        if current_depth >= max_depth:
+        except (PermissionError, OSError) as e:
+            logger.warning(f"Error accessing {path}: {e}")
             return
 
         # Try listing contents of the current directory
@@ -153,22 +155,23 @@ class DirectoryTool(BaseTool):
 
         # Add file entries
         for file_entry in files:
-            try:
-                stat = file_entry.stat()
-                flattened.append({
-                    "type": "file",
-                    "path": file_entry.path,
-                    "size": stat.st_size,
-                    "modified": datetime.fromtimestamp(stat.st_mtime).isoformat()
-                })
-            except PermissionError as e:
-                logger.warning(
-                    f"Permission denied accessing {file_entry.path}: {e}"
-                )
-                # Skip this file
-            except OSError as e:
-                logger.error(f"Error accessing {file_entry.path}: {e}")
-                # Skip this file
+            if file_filter is None or fnmatch.fnmatch(file_entry.name, file_filter):
+                try:
+                    stat = file_entry.stat()
+                    flattened.append({
+                        "type": "file",
+                        "path": file_entry.path,
+                        "size": stat.st_size,
+                        "modified": datetime.fromtimestamp(stat.st_mtime).isoformat()
+                    })
+                except PermissionError as e:
+                    logger.warning(
+                        f"Permission denied accessing {file_entry.path}: {e}"
+                    )
+                    # Skip this file
+                except OSError as e:
+                    logger.error(f"Error accessing {file_entry.path}: {e}")
+                    # Skip this file
 
         # Recurse into directories
         for dir_entry in dirs:
@@ -177,5 +180,6 @@ class DirectoryTool(BaseTool):
                 exclude_dirs,
                 flattened,
                 current_depth=current_depth+1,
-                max_depth=max_depth
+                max_depth=max_depth,
+                file_filter=file_filter
             )

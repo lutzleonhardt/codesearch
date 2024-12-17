@@ -2,8 +2,7 @@ from __future__ import annotations
 
 import logging
 import os
-from dataclasses import dataclass
-from typing import Any, TypeVar, Generic, List, TypeAlias
+from typing import Any, List, TypeAlias, Optional
 
 from pydantic_ai import Agent, RunContext
 from pydantic_ai.models.openai import OpenAIModel
@@ -11,8 +10,8 @@ from pydantic_ai.models.openai import OpenAIModel
 from .prompts import SYSTEM_PROMPT, ASSISTANT_PROMPT
 from .schemas import AgentOutput, Deps, PartialContent
 from ..config.settings import API_KEY, MODEL
-from ..tools.directory import DirectoryTool, DirEntry, DirectoryPage
-from ..tools.ctags import CtagsTool, CtagsPage
+from ..tools.ctags import CtagsTool
+from ..tools.directory import DirectoryTool, DirectoryPage
 
 # Type alias for directory response
 DirectoryResponse: TypeAlias = PartialContent[DirectoryPage]
@@ -38,14 +37,18 @@ agent = Agent(
 logger = logging.getLogger(__name__)
 
 @agent.tool
-def directory(ctx: RunContext[Deps], relative_path_from_project_root: str, max_depth: int, exclude_dirs = None) -> PartialContent[DirectoryResponse]:
-    """Get the directory structure at the given path. The result could be truncated (see result_is_complete).
+def directory(ctx: RunContext[Deps], relative_path_from_project_root: str, max_depth: int, exclude_dirs = None, file_filter: Optional[str] = None) -> PartialContent[DirectoryResponse]:
+    """Get the directory structure at the given path. The result could be truncated (see result_is_complete). It also returns empty folders.
 
     Args:
         ctx: The run context with dependencies
         relative_path_from_project_root: The relative path from the project root to analyze
         max_depth: Maximum depth to traverse in the directory tree
-        exclude_dirs: A list of directories to exclude from the directory tree, default to some well known exclusion set
+        exclude_dirs: A list of directories to exclude from the directory tree. Defaults to: [".git", ".hg", ".svn",
+            ".DS_Store", "node_modules", "bower_components", "dist", "build", "env", "venv", ".venv", "__pycache__",
+            ".pytest_cache", ".mypy_cache", ".cache", ".idea", ".vscode", "vendor", "out", "target", ".bundle",
+            "coverage", "bin"]
+        file_filter: Optional pattern to filter files (e.g. "*.py" for Python files). It will also return empty folders.
 
     Returns:
         PartialContent[List[CtagsEntry]]: A paginated response containing the directory structure. The result could be truncated (see result_is_complete).
@@ -61,7 +64,7 @@ def directory(ctx: RunContext[Deps], relative_path_from_project_root: str, max_d
             ]
         full_path = os.path.normpath(os.path.join(ctx.deps.project_root, relative_path_from_project_root))
         logger.info(f"Scanning directory at {full_path} with max_depth={max_depth}")
-        result = directory_tool.run(path=full_path, limit=ctx.deps.limit, max_depth=max_depth, exclude_dirs=exclude_dirs, verbose=ctx.deps.verbose)
+        result = directory_tool.run(path=full_path, limit=ctx.deps.limit, max_depth=max_depth, exclude_dirs=exclude_dirs, verbose=ctx.deps.verbose, file_filter=file_filter)
         logger.debug(f"Found {result['total_entries']} entries, returning {result['returned_entries']}")
         result_is_complete = result["returned_entries"] == result["total_entries"]
         return PartialContent(
