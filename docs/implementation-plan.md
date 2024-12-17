@@ -291,9 +291,9 @@ This plan provides a detailed roadmap and shows you how to weave colorized outpu
 - [ ] add a note "Content is truncated, missing lines: {number of lines missing}" when the result is truncated
 - [ ] Tool CTags
   - [ ] possibility to pass a language
-  - [ ] action: generate_tags does not need to show parameters
+  - [x] action: generate_tags does not need to show parameters
 - [ ] Tool Directory
-    - [ ] use a regex filter for filtering files
+    - [x] use a regex filter for filtering files
     - [x] extend the exclude_filter to exclude files
 - [ ] Tool Terminal
   - [ ] preferred tools: rg, grep, find, ls.
