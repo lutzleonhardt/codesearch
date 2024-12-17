@@ -39,7 +39,10 @@ class CtagsTool(BaseTool):
     def _run(self, action: str, input_file: str = "", symbol: str = "", kind: str = "", limit: int = 50, **kwargs) -> CtagsPage:
         """Run ctags/readtags actions."""
         # Run actions based on provided parameters
-        tags_file = os.path.join(input_file, 'tags') if os.path.isdir(input_file) else 'tags'
+        if os.path.isdir(input_file):
+            tags_file = os.path.join(input_file, 'tags')
+        else:
+            tags_file = f"{input_file}_tags"
 
         if action == 'generate_tags':
             if os.path.isdir(input_file):
