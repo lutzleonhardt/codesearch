@@ -36,7 +36,7 @@ class CtagsTool(BaseTool):
     def get_tool_text_end(self, result: CtagsPage) -> str:
         return f"total_entries: {result['total_entries']}, returned_entries: {result['returned_entries']}"
 
-    def _run(self, action: str, input_path: str = "", symbol: str = "", kind: str = "", limit: int = 50, exclude_dirs: List[str] = None, isSymbolRegex: bool = False, **kwargs) -> CtagsPage:
+    def _run(self, action: str, input_path: str = "", symbol: str = "", kind: str = "", limit: int = 50, exclude_dirs: List[str] = None, is_symbol_regex: bool = False, **kwargs) -> CtagsPage:
         """Run ctags/readtags actions."""
         # Run actions based on provided parameters
         if os.path.isdir(input_path):
@@ -68,7 +68,7 @@ class CtagsTool(BaseTool):
 
         if action == 'filter':
             # Unified logic
-            if isSymbolRegex:
+            if is_symbol_regex:
                 if symbol and kind:
                     cmd = base_cmd + ["-Q", f'(and (#/{symbol}/ $name) (eq? $kind "{kind}"))', "-l"]
                 elif symbol:
