@@ -33,7 +33,7 @@ logger = logging.getLogger(__name__)
 @click.command()
 @click.option('--verbose', is_flag=True, default=False, help='Enable verbose output')
 @click.option('--root-dir', default='.', help='Root directory to explore')
-@click.option('--tools-result-limit', default=200, help='Maximum number of results (lines) to return for tools')
+@click.option('--tools-result-limit', default=100, help='Maximum number of results (lines) to return for tools')
 def main(verbose, root_dir, tools_result_limit):
     """Main entry point for codesearch CLI."""
     return asyncio.run(async_main(verbose, root_dir, tools_result_limit))
@@ -79,7 +79,7 @@ async def run_interactive_session(deps):
             processed_messages.append(msg)
 
         agent_output = await agent.run(
-            USER_PROMPT + user_input,
+            USER_PROMPT.replace('{question}', user_input),
             deps=deps,
             message_history=processed_messages
         )

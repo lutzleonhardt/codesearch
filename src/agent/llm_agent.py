@@ -92,20 +92,23 @@ def ctags_readtags_tool(ctx: RunContext[Deps], action: str, relative_path_from_p
     You can use it to generate tags, query symbols, and filter results by kind. You need ALWAYS to first generate the tags file using the 'generate_tags' action.
     The result could be truncated (see result_is_complete).
     Actions:
-        - 'generate_tags': Generate or update a tags file for 'input_file' (file or directory).
-        - 'find_symbol': Search for a specific 'symbol' in the tags file.
-        - 'list_symbols': List all symbols in the tags file.
-        - 'filter_by_kind': List all symbols of a given 'kind' (e.g. 'function', 'class').
+        'generate_tags': Generate or update a tags file for 'input_file' (file or directory).
+        'find_symbol': Search for a specific 'symbol' in the tags file (can be narrowed down by 'kind').
+        'list_symbols': List all symbols in the tags file.
+        'filter_by_kind': List all symbols of a given 'kind' (e.g. 'function', 'class'). Can be narrowed down by 'symbol'.
 
     Args:
         action (str): The action to perform.
         relative_path_from_project_root (str): The file or directory to generate tags from (required for 'generate_tags').
         symbol (str): The symbol to search for ('find_symbol' only).
         kind (str): The kind of symbol to filter by ('filter_by_kind' only).
+        exclude_dirs: A list of directories to exclude from the directory tree, defaults to ["node_modules", "venv", "bin", "dist", ".git", ".svn", "__pycache__"]
 
     Returns:
     A PartialContent[List[CtagsEntry]] object with a list of tag entries. The result could be truncated (see result_is_complete).
     """
+    if exclude_dirs is None:
+        exclude_dirs = ["node_modules", "venv", "bin", "dist", ".git", ".svn", "__pycache__"]
     input_file = os.path.normpath(os.path.join(ctx.deps.project_root, relative_path_from_project_root))
     ctags_tool = CtagsTool()
     try:
