@@ -12,7 +12,7 @@ from .prompts import SYSTEM_PROMPT, ASSISTANT_PROMPT
 from .schemas import AgentOutput, Deps, PartialContent
 from ..config.settings import API_KEY, MODEL
 from ..tools.directory import DirectoryTool, DirEntry, DirectoryPage
-from ..tools.ctags import CtagsTool, CtagsPage, CtagsEntry
+from ..tools.ctags import CtagsTool, CtagsPage
 
 # Type alias for directory response
 DirectoryResponse: TypeAlias = PartialContent[DirectoryPage]
@@ -84,13 +84,11 @@ def directory(ctx: RunContext[Deps], relative_path_from_project_root: str, max_d
             error=True,
             aborted=False,
         )
-
-#AI: please update the Actions in the docstring following the ctags.py
 @agent.tool
-def ctags_readtags_tool(ctx: RunContext[Deps], action: str, relative_path_from_project_root: str = "", symbol: str = "", kind: str = "", is_symbol_regex: bool = False) -> PartialContent[List[CtagsEntry]]:
+def ctags_readtags_tool(ctx: RunContext[Deps], action: str, relative_path_from_project_root: str = "", symbol: str = "", kind: str = "", is_symbol_regex: bool = False) -> PartialContent[List[str]]:
     """
-    Query tags using universal-ctags and readtags utilities. This tool provides structured access to ctags and readtags functionalities.
-    You can use it to generate tags, query symbols, and filter results by kind. You need ALWAYS to first generate the tags file using the 'generate_tags' action.
+    Query tags using universal-ctags and readtags utilities. This tool provides access to ctags and readtags functionalities.
+    You need ALWAYS to first generate the tags file using the 'generate_tags' action.
     The result could be truncated (see result_is_complete). HINT: imports are not considered as symbols!
     Actions:
         'generate_tags': Generate or update a tags file for the given path.
@@ -104,7 +102,8 @@ def ctags_readtags_tool(ctx: RunContext[Deps], action: str, relative_path_from_p
         is_symbol_regex (bool): If True, treat the symbol parameter as a regular expression pattern.
 
     Returns:
-    A PartialContent[List[CtagsEntry]] object with a list of tag entries. The result could be truncated (see result_is_complete).
+        PartialContent[List[str]]: A list of raw ctags output lines. Each line contains tab-separated fields with symbol information. sample:
+        _run    src/tools/base.py       /^    def _run(self, **kwargs):$/;"     kind:m  class:BaseTool
     """
     input_path = os.path.normpath(os.path.join(ctx.deps.project_root, relative_path_from_project_root))
     ctags_tool = CtagsTool()

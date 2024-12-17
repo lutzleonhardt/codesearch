@@ -8,23 +8,15 @@ from ..shared import colored_print
 
 logger = logging.getLogger(__name__)
 
-class CtagsEntry(TypedDict):
-    symbol: str
-    file: str
-    pattern: str
-    kind: str
-    line: int
-
 class CtagsPage(TypedDict):
     total_entries: int
     returned_entries: int
-    entries: List[CtagsEntry]
+    entries: List[str]
 
 class CtagsTool(BaseTool):
-    def print_verbose_output(self, result: CtagsPage, is_symbol_regex: bool = False):
-        for entry in result['entries']:
-            regex_indicator = "(regex)" if is_symbol_regex else ""
-            colored_print(f"{entry['kind']} {entry['symbol']} {regex_indicator} @ {entry['file']} line {entry['line']}", color="YELLOW")
+    def print_verbose_output(self, result: CtagsPage):
+        for line in result["entries"]:
+            colored_print(line, color="YELLOW")
     def get_tool_text_start(self, action: str, input_path: str = "", symbol: str = "", kind: str = "", is_symbol_regex: bool = False, **kwargs) -> List[str]:
         return [
             "Query ctags",
@@ -87,7 +79,7 @@ class CtagsTool(BaseTool):
                 elif symbol:
                     cmd = base_cmd + ["-i", symbol]
                 elif kind:
-                    cmd = base_cmd + ["-l", "-Q", f'(eq? $kind "{kind}")']
+                    cmd = base_cmd + ["-Q", f'(eq? $kind "{kind}")', "-l"]
                 else:
                     logger.error(f"Unknown action: {action}")
                     return {"total_entries": 0, "returned_entries": 0, "entries": []}
@@ -96,17 +88,17 @@ class CtagsTool(BaseTool):
             logger.error(f"Unknown action: {action}")
             raise ToolAbortedException("Unknown action")
 
-        # Run readtags command and parse results
+        # Run readtags command and get output lines
         output = self._run_command(cmd)
-        entries = self._parse_readtags_output(output)
+        lines = [line.strip() for line in output.splitlines() if line.strip()]
 
-        # Truncate results
-        truncated = entries[:limit]
+        # Truncate results if needed
+        truncated_lines = lines[:limit]
 
         return {
-            "total_entries": len(entries),
-            "returned_entries": len(truncated),
-            "entries": truncated
+            "total_entries": len(lines),
+            "returned_entries": len(truncated_lines),
+            "entries": truncated_lines
         }
 
     def _run_command(self, cmd: List[str]) -> str:
@@ -119,36 +111,3 @@ class CtagsTool(BaseTool):
             logger.error(f"Command failed: {e.stderr}")
             return ""
 
-    def _parse_readtags_output(self, output: str) -> List[CtagsEntry]:
-        entries = []
-        # readtags output format (default) per line:
-        # symbol  file    ex_cmd  ext_fields...
-        # Typically: SYMBOL  FILE  /pattern/  kind:[a-zA-Z]
-        # We'll parse line-by-line
-        for line in output.splitlines():
-            if not line.strip():
-                continue
-            parts = line.split('\t')
-            if len(parts) < 3:
-                continue
-            symbol, file_, pattern = parts[:3]
-            # Additional fields may contain kind:
-            kind = ""
-            line_num = 0
-            for field in parts[3:]:
-                if field.startswith("kind:"):
-                    kind = field.split("kind:", 1)[1]
-                elif field.startswith("line:"):
-                    try:
-                        line_num = int(field.split("line:", 1)[1])
-                    except ValueError:
-                        pass
-
-            entries.append({
-                "symbol": symbol,
-                "file": file_,
-                "pattern": pattern,
-                "kind": kind,
-                "line": line_num
-            })
-        return entries
