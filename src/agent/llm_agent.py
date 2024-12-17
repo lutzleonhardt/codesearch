@@ -85,6 +85,7 @@ def directory(ctx: RunContext[Deps], relative_path_from_project_root: str, max_d
             aborted=False,
         )
 
+#AI: please update the Actions in the docstring following the ctags.py
 @agent.tool
 def ctags_readtags_tool(ctx: RunContext[Deps], action: str, relative_path_from_project_root: str = "", symbol: str = "", kind: str = "", exclude_dirs: List[str] = None) -> PartialContent[List[CtagsEntry]]:
     """
@@ -92,10 +93,21 @@ def ctags_readtags_tool(ctx: RunContext[Deps], action: str, relative_path_from_p
     You can use it to generate tags, query symbols, and filter results by kind. You need ALWAYS to first generate the tags file using the 'generate_tags' action.
     The result could be truncated (see result_is_complete).
     Actions:
-        'generate_tags': Generate or update a tags file for 'input_file' (file or directory).
-        'find_symbol': Search for a specific 'symbol' in the tags file (can be narrowed down by 'kind').
-        'list_symbols': List all symbols in the tags file.
-        'filter_by_kind': List all symbols of a given 'kind' (e.g. 'function', 'class'). Can be narrowed down by 'symbol'.
+        'generate_tags': Generate or update a tags file for the given path.
+        'filter': Filter tags by symbol and/or kind. If neither is provided, lists all tags.
+
+    Kinds:
+        c for classes
+        f for functions
+        v for variables
+        m for class or struct members
+        d for macro definitions
+        t for typedefs
+        e for enumerators
+        g for enumerations
+        s for structures
+        u for unions
+        p for function prototypes
 
     Args:
         action (str): The action to perform.

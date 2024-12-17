@@ -20,11 +20,11 @@ class CtagsPage(TypedDict):
     entries: List[CtagsEntry]
 
 class CtagsTool(BaseTool):
-    def print_verbose_output(self, result: CtagsPage):
+    def print_verbose_output(self, result: CtagsPage, exclude_dirs: List[str] = None):
+        if exclude_dirs:
+            colored_print(f"Excluding directories: {exclude_dirs}", color="BLUE")
         for entry in result['entries']:
             colored_print(f"{entry['kind']} {entry['symbol']} @ {entry['file']} line {entry['line']}", color="YELLOW")
-
-    #AI: add the exclusion list as a method parameter to print it here (do it like in directory.py)
     def get_tool_text_start(self, action: str, input_file: str = "", symbol: str = "", kind: str = "", exclude_dirs: List[str] = None, **kwargs) -> List[str]:
         return [
             "Query ctags",
@@ -38,7 +38,6 @@ class CtagsTool(BaseTool):
     def get_tool_text_end(self, result: CtagsPage) -> str:
         return f"total_entries: {result['total_entries']}, returned_entries: {result['returned_entries']}"
 
-    #AI: add the exclusion list as a method parameter<
     def _run(self, action: str, input_file: str = "", symbol: str = "", kind: str = "", limit: int = 50, exclude_dirs: List[str] = None, **kwargs) -> CtagsPage:
         """Run ctags/readtags actions."""
         # Run actions based on provided parameters
@@ -48,7 +47,6 @@ class CtagsTool(BaseTool):
             # Generate/update tags file
             # Example: universal-ctags command (recursive)
             # Adjust as needed for your environment
-            #AI: I want to pass a exclusion list if provided as a parameter (ctags -R --exclude=.git --exclude=.hg) (do it like in directory.py)
             cmd = ["ctags", "-R", "-f", tags_file]
             if exclude_dirs:
                 for exclude_dir in exclude_dirs:
@@ -67,33 +65,27 @@ class CtagsTool(BaseTool):
         # Base command with extension fields and line numbers
         base_cmd = ["readtags", "-t", tags_file, "-e", "-n"]
 
-        if action == 'find_symbol':
-            if not symbol:
-                logger.error("No symbol provided for 'find_symbol'.")
-                return {"total_entries": 0, "returned_entries": 0, "entries": []}
-            # Direct symbol lookup with case insensitive matching and optional kind filtering
-            if kind:
-                cmd = base_cmd + ["-i", symbol, "-Q", f"kind == '{kind}'"]
-            else:
+        if action == 'filter':
+            # Unified logic
+            if not symbol and not kind:
+                # no filters, list all
+                cmd = base_cmd + ["-l"]
+            elif symbol and kind:
+                # filter by symbol and kind
+                cmd = base_cmd + ["-i", symbol, "-Q", f'(eq? $kind "{kind}")']
+            elif symbol:
+                # filter by symbol only
                 cmd = base_cmd + ["-i", symbol]
-
-        elif action == 'list_symbols':
-            # List all symbols
-            cmd = base_cmd + ["--list"]
-
-        elif action == 'filter_by_kind':
-            if not kind:
-                logger.error("No kind provided for 'filter_by_kind'.")
-                return {"total_entries": 0, "returned_entries": 0, "entries": []}
-            # List all and filter by kind using -Q filter expression, with optional symbol filtering
-            if symbol:
-                cmd = base_cmd + ["--list", "-Q", f"kind == '{kind}'", "-i", symbol]
+            elif kind:
+                # filter by kind only
+                cmd = base_cmd + ["-l", "-Q", f'(eq? $kind "{kind}")']
             else:
-                cmd = base_cmd + ["--list", "-Q", f"kind == '{kind}'"]
+                logger.error(f"Unknown action: {action}")
+                return {"total_entries": 0, "returned_entries": 0, "entries": []}
 
         else:
             logger.error(f"Unknown action: {action}")
-            return {"total_entries": 0, "returned_entries": 0, "entries": []}
+            raise ToolAbortedException("Unknown action")
 
         # Run readtags command and parse results
         output = self._run_command(cmd)
