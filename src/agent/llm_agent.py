@@ -45,7 +45,7 @@ def directory(ctx: RunContext[Deps], relative_path_from_project_root: str, max_d
         ctx: The run context with dependencies
         relative_path_from_project_root: The relative path from the project root to analyze
         max_depth: Maximum depth to traverse in the directory tree
-        exclude_dirs: A list of directories to exclude from the directory tree, defaults to ["node_modules", "venv", "bin", "dist", ".git", ".svn", "__pycache__"]
+        exclude_dirs: A list of directories to exclude from the directory tree, default to some well known exclusion set
 
     Returns:
         PartialContent[List[CtagsEntry]]: A paginated response containing the directory structure. The result could be truncated (see result_is_complete).
@@ -53,7 +53,12 @@ def directory(ctx: RunContext[Deps], relative_path_from_project_root: str, max_d
     directory_tool = DirectoryTool()
     try:
         if exclude_dirs is None:
-            exclude_dirs = ["node_modules", "venv", "bin", "dist", ".git", ".svn", "__pycache__"]
+            exclude_dirs = [
+                ".git", ".hg", ".svn", ".DS_Store", "node_modules", "bower_components",
+                "dist", "build", "env", "venv", ".venv", "__pycache__", ".pytest_cache",
+                ".mypy_cache", ".cache", ".idea", ".vscode", "vendor", "out", "target",
+                ".bundle", "coverage", "bin"
+            ]
         full_path = os.path.normpath(os.path.join(ctx.deps.project_root, relative_path_from_project_root))
         logger.info(f"Scanning directory at {full_path} with max_depth={max_depth}")
         result = directory_tool.run(path=full_path, limit=ctx.deps.limit, max_depth=max_depth, exclude_dirs=exclude_dirs, verbose=ctx.deps.verbose)
