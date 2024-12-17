@@ -94,7 +94,7 @@ def ctags_readtags_tool(ctx: RunContext[Deps], action: str, relative_path_from_p
     The result could be truncated (see result_is_complete).
     Actions:
         'generate_tags': Generate or update a tags file for the given path.
-        'filter': Filter tags by symbol and/or kind. If neither is provided, lists all tags.
+        'filter': Filter tags by symbol and/or kind. If neither is provided, lists all tags. Regex for symbols is supported, see is_symbol_regex
 
     Kinds:
         c for classes
