@@ -52,7 +52,7 @@ class DirectoryTool(BaseTool):
             filter_str
         ]
 
-    def get_tool_text_end(self, result: DirectoryPage) -> str:
+    def get_tool_text_end(self, result: DirectoryPage, **kwargs) -> str:
         return f"total_entries: {result['total_entries']}, returned_entries: {result['returned_entries']}"
 
     def _run(
