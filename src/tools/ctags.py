@@ -23,7 +23,8 @@ class CtagsPage(TypedDict):
 class CtagsTool(BaseTool):
     def print_verbose_output(self, result: CtagsPage, is_symbol_regex: bool = False):
         for entry in result['entries']:
-            colored_print(f"{entry['kind']} {entry['symbol']} @ {entry['file']} line {entry['line']}", color="YELLOW")
+            regex_indicator = "(regex)" if is_symbol_regex else ""
+            colored_print(f"{entry['kind']} {entry['symbol']} {regex_indicator} @ {entry['file']} line {entry['line']}", color="YELLOW")
     def get_tool_text_start(self, action: str, input_path: str = "", symbol: str = "", kind: str = "", is_symbol_regex: bool = False, **kwargs) -> List[str]:
         return [
             "Query ctags",
