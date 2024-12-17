@@ -17,7 +17,14 @@ class CtagsTool(BaseTool):
     def print_verbose_output(self, result: CtagsPage):
         for line in result["entries"]:
             colored_print(line, color="YELLOW")
+
     def get_tool_text_start(self, action: str, input_path: str = "", symbol: str = "", kind: str = "", is_symbol_regex: bool = False, **kwargs) -> List[str]:
+        if action == 'generate_tags':
+            return [
+                "Query ctags",
+                f"action: {action}",
+                f"input_path: {input_path}"
+            ]
         return [
             "Query ctags",
             f"action: {action}",
@@ -27,7 +34,11 @@ class CtagsTool(BaseTool):
             f"is_symbol_regex: {is_symbol_regex}",
         ]
 
-    def get_tool_text_end(self, result: CtagsPage) -> str:
+
+    def get_tool_text_end(self, result: CtagsPage, **kwargs) -> str:
+        action = kwargs.get('action', '')
+        if action == 'generate_tags':
+            return ""
         return f"total_entries: {result['total_entries']}, returned_entries: {result['returned_entries']}"
 
     def _run(self, action: str, input_path: str = "", symbol: str = "", kind: str = "", limit: int = 50, exclude_dirs: List[str] = None, is_symbol_regex: bool = False, **kwargs) -> CtagsPage:

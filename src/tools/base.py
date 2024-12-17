@@ -11,7 +11,6 @@ class ToolAbortedException(Exception):
     """Raised when a tool operation is aborted by the user"""
     pass
 
-
 class BaseTool(ABC):
     def run(self, **kwargs):
         """Base run method that handles user approval and messaging"""
@@ -41,7 +40,7 @@ class BaseTool(ABC):
                 self.print_verbose_output(result)
 
             if result:
-                end_text = self.get_tool_text_end(result)
+                end_text = self.get_tool_text_end(result, **kwargs)
                 colored_print(f"[{tool_text} - end]", color="CYAN", colorize_all=True, linebreak=False)
                 print(" " + end_text)
                 print()  # new line
@@ -58,7 +57,7 @@ class BaseTool(ABC):
         pass
 
     @abstractmethod
-    def get_tool_text_end(self, result) -> [str, str]:
+    def get_tool_text_end(self, result, **kwargs) -> [str, str]:
         """Return the tool description text to show after completion"""
         pass
 
