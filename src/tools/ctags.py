@@ -24,11 +24,11 @@ class CtagsTool(BaseTool):
     def print_verbose_output(self, result: CtagsPage):
         for entry in result['entries']:
             colored_print(f"{entry['kind']} {entry['symbol']} @ {entry['file']} line {entry['line']}", color="YELLOW")
-    def get_tool_text_start(self, action: str, input_file: str = "", symbol: str = "", kind: str = "", **kwargs) -> List[str]:
+    def get_tool_text_start(self, action: str, input_path: str = "", symbol: str = "", kind: str = "", **kwargs) -> List[str]:
         return [
             "Query ctags",
             f"action: {action}",
-            f"input_file: {input_file}",
+            f"input_path: {input_path}",
             f"symbol: {symbol}",
             f"kind: {kind}",
         ]
@@ -36,23 +36,23 @@ class CtagsTool(BaseTool):
     def get_tool_text_end(self, result: CtagsPage) -> str:
         return f"total_entries: {result['total_entries']}, returned_entries: {result['returned_entries']}"
 
-    def _run(self, action: str, input_file: str = "", symbol: str = "", kind: str = "", limit: int = 50, **kwargs) -> CtagsPage:
+    def _run(self, action: str, input_path: str = "", symbol: str = "", kind: str = "", limit: int = 50, **kwargs) -> CtagsPage:
         """Run ctags/readtags actions."""
         # Run actions based on provided parameters
-        if os.path.isdir(input_file):
-            tags_file = os.path.join(input_file, 'tags')
+        if os.path.isdir(input_path):
+            tags_file = os.path.join(input_path, 'tags')
         else:
-            tags_file = f"{input_file}_tags"
+            tags_file = f"{input_path}_tags"
 
         if action == 'generate_tags':
-            if os.path.isdir(input_file):
-                cwd = input_file
+            if os.path.isdir(input_path):
+                cwd = input_path
                 git_ls_files = subprocess.run(["git", "ls-files"], stdout=subprocess.PIPE, check=True, text=True, cwd=cwd)
-                ctags_cmd = ["ctags", "-f", tags_file, "-L", "-"]
+                ctags_cmd = ["ctags", "-f", "tags", "-L", "-"]
                 subprocess.run(ctags_cmd, input=git_ls_files.stdout, text=True, check=True, cwd=cwd)
             else:
                 cmd = ["ctags", "-R", "-f", tags_file]
-                cmd.append(input_file)
+                cmd.append(input_path)
                 self._run_command(cmd)
             # After generation, no entries returned
             return {"total_entries": 0, "returned_entries": 0, "entries": []}

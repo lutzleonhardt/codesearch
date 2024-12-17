@@ -87,7 +87,7 @@ def directory(ctx: RunContext[Deps], relative_path_from_project_root: str, max_d
 
 #AI: please update the Actions in the docstring following the ctags.py
 @agent.tool
-def ctags_readtags_tool(ctx: RunContext[Deps], action: str, relative_path_from_project_root: str = "", symbol: str = "", kind: str = "", exclude_dirs: List[str] = None) -> PartialContent[List[CtagsEntry]]:
+def ctags_readtags_tool(ctx: RunContext[Deps], action: str, relative_path_from_project_root: str = "", symbol: str = "", kind: str = "") -> PartialContent[List[CtagsEntry]]:
     """
     Query tags using universal-ctags and readtags utilities. This tool provides structured access to ctags and readtags functionalities.
     You can use it to generate tags, query symbols, and filter results by kind. You need ALWAYS to first generate the tags file using the 'generate_tags' action.
@@ -114,24 +114,20 @@ def ctags_readtags_tool(ctx: RunContext[Deps], action: str, relative_path_from_p
         relative_path_from_project_root (str): The file or directory to generate tags from (required for 'generate_tags').
         symbol (str): The symbol to search for ('find_symbol' only).
         kind (str): The kind of symbol to filter by ('filter_by_kind' only).
-        exclude_dirs: A list of directories to exclude from the directory tree, defaults to ["node_modules", "venv", "bin", "dist", ".git", ".svn", "__pycache__"]
 
     Returns:
     A PartialContent[List[CtagsEntry]] object with a list of tag entries. The result could be truncated (see result_is_complete).
     """
-    if exclude_dirs is None:
-        exclude_dirs = ["node_modules", "venv", "bin", "dist", ".git", ".svn", "__pycache__"]
-    input_file = os.path.normpath(os.path.join(ctx.deps.project_root, relative_path_from_project_root))
+    input_path = os.path.normpath(os.path.join(ctx.deps.project_root, relative_path_from_project_root))
     ctags_tool = CtagsTool()
     try:
         result = ctags_tool.run(
             action=action,
-            input_file=input_file,
+            input_path=input_path,
             symbol=symbol,
             kind=kind,
             limit=ctx.deps.limit,
             verbose=ctx.deps.verbose,
-            exclude_dirs=exclude_dirs
         )
         result_is_complete = result["returned_entries"] == result["total_entries"]
         return PartialContent(
