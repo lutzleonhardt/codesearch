@@ -36,7 +36,7 @@ class CtagsTool(BaseTool):
     def get_tool_text_end(self, result: CtagsPage) -> str:
         return f"total_entries: {result['total_entries']}, returned_entries: {result['returned_entries']}"
 
-    def _run(self, action: str, input_path: str = "", symbol: str = "", kind: str = "", limit: int = 50, **kwargs) -> CtagsPage:
+    def _run(self, action: str, input_path: str = "", symbol: str = "", kind: str = "", limit: int = 50, exclude_dirs: List[str] = None, isSymbolRegex: bool = False, **kwargs) -> CtagsPage:
         """Run ctags/readtags actions."""
         # Run actions based on provided parameters
         if os.path.isdir(input_path):
@@ -68,21 +68,27 @@ class CtagsTool(BaseTool):
 
         if action == 'filter':
             # Unified logic
-            if not symbol and not kind:
-                # no filters, list all
-                cmd = base_cmd + ["-l"]
-            elif symbol and kind:
-                # filter by symbol and kind
-                cmd = base_cmd + ["-i", symbol, "-Q", f'(eq? $kind "{kind}")']
-            elif symbol:
-                # filter by symbol only
-                cmd = base_cmd + ["-i", symbol]
-            elif kind:
-                # filter by kind only
-                cmd = base_cmd + ["-l", "-Q", f'(eq? $kind "{kind}")']
+            if isSymbolRegex:
+                if symbol and kind:
+                    cmd = base_cmd + ["-Q", f'(and (#/{symbol}/ $name) (eq? $kind "{kind}"))', "-l"]
+                elif symbol:
+                    cmd = base_cmd + ["-Q", f'(#/{symbol}/ $name)', "-l"]
+                elif kind:
+                    cmd = base_cmd + ["-Q", f'(eq? $kind "{kind}")', "-l"]
+                else:
+                    cmd = base_cmd + ["-l"]
             else:
-                logger.error(f"Unknown action: {action}")
-                return {"total_entries": 0, "returned_entries": 0, "entries": []}
+                if not symbol and not kind:
+                    cmd = base_cmd + ["-l"]
+                elif symbol and kind:
+                    cmd = base_cmd + ["-i", symbol, "-Q", f'(eq? $kind "{kind}")']
+                elif symbol:
+                    cmd = base_cmd + ["-i", symbol]
+                elif kind:
+                    cmd = base_cmd + ["-l", "-Q", f'(eq? $kind "{kind}")']
+                else:
+                    logger.error(f"Unknown action: {action}")
+                    return {"total_entries": 0, "returned_entries": 0, "entries": []}
 
         else:
             logger.error(f"Unknown action: {action}")
