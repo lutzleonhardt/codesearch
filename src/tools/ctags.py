@@ -1,5 +1,6 @@
 import logging
 import os
+import subprocess
 from typing import List, TypedDict
 
 from .base import BaseTool, ToolAbortedException
@@ -44,15 +45,21 @@ class CtagsTool(BaseTool):
         tags_file = os.path.join(input_file, 'tags') if os.path.isdir(input_file) else 'tags'
 
         if action == 'generate_tags':
-            # Generate/update tags file
-            # Example: universal-ctags command (recursive)
-            # Adjust as needed for your environment
-            cmd = ["ctags", "-R", "-f", tags_file]
-            if exclude_dirs:
-                for exclude_dir in exclude_dirs:
-                    cmd.extend(["--exclude", exclude_dir])
-            cmd.append(input_file)
-            self._run_command(cmd)
+            if os.path.isdir(input_file):
+                cwd = input_file
+                git_ls_files = subprocess.run(["git", "ls-files"], stdout=subprocess.PIPE, check=True, text=True, cwd=cwd)
+                ctags_cmd = ["ctags", "-f", tags_file, "-L", "-"]
+                if exclude_dirs:
+                    for exclude_dir in exclude_dirs:
+                        ctags_cmd.extend(["--exclude", exclude_dir])
+                subprocess.run(ctags_cmd, input=git_ls_files.stdout, text=True, check=True, cwd=cwd)
+            else:
+                cmd = ["ctags", "-R", "-f", tags_file]
+                if exclude_dirs:
+                    for exclude_dir in exclude_dirs:
+                        cmd.extend(["--exclude", exclude_dir])
+                cmd.append(input_file)
+                self._run_command(cmd)
             # After generation, no entries returned
             return {"total_entries": 0, "returned_entries": 0, "entries": []}
 
