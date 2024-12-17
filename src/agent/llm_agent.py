@@ -87,7 +87,7 @@ def directory(ctx: RunContext[Deps], relative_path_from_project_root: str, max_d
 
 #AI: please update the Actions in the docstring following the ctags.py
 @agent.tool
-def ctags_readtags_tool(ctx: RunContext[Deps], action: str, relative_path_from_project_root: str = "", symbol: str = "", kind: str = "") -> PartialContent[List[CtagsEntry]]:
+def ctags_readtags_tool(ctx: RunContext[Deps], action: str, relative_path_from_project_root: str = "", symbol: str = "", kind: str = "", is_symbol_regex: bool = False) -> PartialContent[List[CtagsEntry]]:
     """
     Query tags using universal-ctags and readtags utilities. This tool provides structured access to ctags and readtags functionalities.
     You can use it to generate tags, query symbols, and filter results by kind. You need ALWAYS to first generate the tags file using the 'generate_tags' action.
@@ -114,6 +114,7 @@ def ctags_readtags_tool(ctx: RunContext[Deps], action: str, relative_path_from_p
         relative_path_from_project_root (str): The file or directory to generate tags from (required for 'generate_tags').
         symbol (str): The symbol to search for ('find_symbol' only).
         kind (str): The kind of symbol to filter by ('filter_by_kind' only).
+        is_symbol_regex (bool): If True, treat the symbol parameter as a regular expression pattern.
 
     Returns:
     A PartialContent[List[CtagsEntry]] object with a list of tag entries. The result could be truncated (see result_is_complete).
@@ -128,6 +129,7 @@ def ctags_readtags_tool(ctx: RunContext[Deps], action: str, relative_path_from_p
             kind=kind,
             limit=ctx.deps.limit,
             verbose=ctx.deps.verbose,
+            is_symbol_regex=is_symbol_regex,
         )
         result_is_complete = result["returned_entries"] == result["total_entries"]
         return PartialContent(
