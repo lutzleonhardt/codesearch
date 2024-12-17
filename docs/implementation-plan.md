@@ -219,7 +219,7 @@ Implement tools one by one and integrate them into the Agent logic. Use colorize
 - Run CLI, ask a query that triggers a tool. User approves, tool runs, `Agent` summarizes.
 - The final summary is printed with `colored_print()` so user can distinguish it from normal output.
 
-### Step 6: Real LLM Integration & Summarization Logic
+### Step 6: Real LLM Integration & Summarization Logic [DONE]
 
 **Goal:**  
 Use a real LLM. Ensure all chain-of-thought remains internal and only summarized outputs are printed. Colorize final summaries in a distinct color.
@@ -285,3 +285,25 @@ Write integration tests, simulate user sessions. Check that all CLI messages, in
 By integrating colorization early (Step 3) in a simple helper function, all subsequent steps and outputs are easily stylized. You can refine color choices as you go. This incremental approach ensures that by the time you are testing and integrating with real LLM and tools, you already have a consistent way to present different kinds of information visually.
 
 This plan provides a detailed roadmap and shows you how to weave colorized output into the development process from the start.
+
+
+# Next ToDos
+- add a note "Content is truncated, missing lines: {number of lines missing}" when the result is truncated
+- Tool CTags
+  - possibility to pass a language
+  - action: generate_tags does not need to show parameters
+- Tool Directory
+    - use a regex filter for filtering files
+    - extend the exclude_filter to exclude files
+- Tool Terminal
+  - preferred tools: rg, grep, find, ls.
+- Tool ReadFile
+    - no limit on file size
+later:
+- do recognize / commands and when thy are wrong
+- /clear or /reset
+- cursor navigation
+- input history
+- add streaming
+
+
