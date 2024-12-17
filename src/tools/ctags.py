@@ -21,10 +21,10 @@ class CtagsPage(TypedDict):
     entries: List[CtagsEntry]
 
 class CtagsTool(BaseTool):
-    def print_verbose_output(self, result: CtagsPage):
+    def print_verbose_output(self, result: CtagsPage, is_symbol_regex: bool = False):
         for entry in result['entries']:
             colored_print(f"{entry['kind']} {entry['symbol']} @ {entry['file']} line {entry['line']}", color="YELLOW")
-    def get_tool_text_start(self, action: str, input_path: str = "", symbol: str = "", kind: str = "", **kwargs) -> List[str]:
+    def get_tool_text_start(self, action: str, input_path: str = "", symbol: str = "", kind: str = "", is_symbol_regex: bool = False, **kwargs) -> List[str]:
         return [
             "Query ctags",
             f"action: {action}",
