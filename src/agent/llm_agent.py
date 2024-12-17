@@ -91,29 +91,16 @@ def ctags_readtags_tool(ctx: RunContext[Deps], action: str, relative_path_from_p
     """
     Query tags using universal-ctags and readtags utilities. This tool provides structured access to ctags and readtags functionalities.
     You can use it to generate tags, query symbols, and filter results by kind. You need ALWAYS to first generate the tags file using the 'generate_tags' action.
-    The result could be truncated (see result_is_complete).
+    The result could be truncated (see result_is_complete). HINT: imports are not considered as symbols!
     Actions:
         'generate_tags': Generate or update a tags file for the given path.
         'filter': Filter tags by symbol and/or kind. If neither is provided, lists all tags. Regex for symbols is supported, see is_symbol_regex
 
-    Kinds:
-        c for classes
-        f for functions
-        v for variables
-        m for class or struct members
-        d for macro definitions
-        t for typedefs
-        e for enumerators
-        g for enumerations
-        s for structures
-        u for unions
-        p for function prototypes
-
     Args:
         action (str): The action to perform.
         relative_path_from_project_root (str): The file or directory to generate tags from (required for 'generate_tags').
-        symbol (str): The symbol to search for ('find_symbol' only).
-        kind (str): The kind of symbol to filter by ('filter_by_kind' only).
+        symbol (str): The symbol to search for (can be a regex when is_symbol_regex).
+        kind (str): The kind of symbol to filter by (c: classes, f: functions, v: variables, m: class/struct members and methods, d: macro definitions, t: typedefs, e: enumerators, g: enumerations, s: structures, u: unions, p: function prototypes).
         is_symbol_regex (bool): If True, treat the symbol parameter as a regular expression pattern.
 
     Returns:
