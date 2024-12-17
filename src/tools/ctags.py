@@ -31,6 +31,7 @@ class CtagsTool(BaseTool):
             f"input_path: {input_path}",
             f"symbol: {symbol}",
             f"kind: {kind}",
+            f"is_symbol_regex: {is_symbol_regex}",
         ]
 
     def get_tool_text_end(self, result: CtagsPage) -> str:
