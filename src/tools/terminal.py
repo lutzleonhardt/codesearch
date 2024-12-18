@@ -26,6 +26,7 @@ class TerminalTool(BaseTool):
         for line in result['lines']:
             colored_print(line, color="YELLOW")
 
+    #AI: you need to run the command from the specified root-dit as CWD, you need to swicth there before running the command or pass the CWD  somehow. You need to pass the root-dir as a parameter to this fucntion
     def _run(self, command: str, limit: int = 50, **kwargs) -> CommandResult:
         try:
             output = subprocess.check_output(shlex.split(command), stderr=subprocess.STDOUT, universal_newlines=True)

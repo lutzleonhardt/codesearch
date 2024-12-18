@@ -5,7 +5,7 @@ import os
 from typing import Any, List, TypeAlias, Optional
 
 from pydantic_ai import Agent, RunContext
-from pydantic_ai.models.openai import OpenAIModel
+from pydantic_ai.models.anthropic import AnthropicModel
 
 from .prompts import SYSTEM_PROMPT
 from .schemas import AgentOutput, Deps, PartialContent
@@ -27,8 +27,10 @@ def format_message(content: Any) -> str:
     return str(content)
 
 
+
+
 agent = Agent(
-    model=OpenAIModel(
+    model=AnthropicModel(
         MODEL,
         api_key=API_KEY
     ),
@@ -156,6 +158,7 @@ def terminal(ctx: RunContext[Deps], command: str) -> PartialContent[List[str]]:
     """
     terminal_tool = TerminalTool()
     try:
+        #AI!: pass the root-dir as a parameter to this function
         result = terminal_tool.run(command=command, limit=ctx.deps.limit, verbose=ctx.deps.verbose)
         result_is_complete = result["returned_lines"] == result["total_lines"]
         return PartialContent(
