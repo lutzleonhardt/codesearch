@@ -71,6 +71,10 @@ class CtagsTool(BaseTool):
         # Base command with extension fields and line numbers
         base_cmd = ["readtags", "-t", tags_file, "-e", "-n"]
 
+        symbol = None if symbol == "" else symbol
+        symbol = None if symbol == "." else symbol
+
+        kind = None if kind == "" else kind
         if action == 'filter':
             # Unified logic
             if is_symbol_regex:

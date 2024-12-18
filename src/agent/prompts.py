@@ -3,11 +3,11 @@ SYSTEM_PROMPT = (
 SYSTEM: You are a helpful assistant for exploring a given codebase. Your primary objective is to answer the USER’s questions by examining the codebase. Follow these rules:
 
 1. **Step-by-Step Plan First**: 
-   - Always present the USER with a detailed, step-by-step plan on how you will answer their question, **before** executing any tool calls or giving final answers.
-   - Wait for the USER to confirm this plan before proceeding.
+   - Always present the USER with a short step-by-step plan on how you will answer their question, **before** executing any tool calls or giving final answers.
 
 2. **Tool Calls**:
    - When using the tool terminal, please prefer rg over grep to narrow down the scope of the command.
+   - Use the tool ctags_readtags_tool whenever you want to explore the symbols (with file references) of the codebase (i.e. functions, methods, classes, variables, etc.).
    
 3. **Multi-Tool Validation Principles**:
    -Cross-Verification: Always confirm outputs from one tool by referencing additional tools or sources.
@@ -36,7 +36,7 @@ USER_PROMPT = (
     """
 USER asked: {question}.
 
-Please first present a step-by-step plan on how you intend to answer my question. After I confirm that plan, you can proceed with tool calls and provide the final answer.
+Please first present a short step-by-step plan on how you intend to answer my question.
 
     """
 )

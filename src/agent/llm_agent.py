@@ -154,7 +154,7 @@ def ctags_readtags_tool(ctx: RunContext[Deps], action: str, relative_path_from_p
 
     Args:
         action (str): The action to perform.
-        relative_path_from_project_root (str): The file or directory to generate tags from (required for 'generate_tags').
+        relative_path_from_project_root (str): The file or directory to generate tags from (with action 'generate_tags'). The file or directory you want to get tag information from (with action 'filter').
         symbol (str): The symbol to search for (can be a regex when is_symbol_regex).
         kind (str): The kind of symbol to filter by (c: classes, f: functions, v: variables, m: class/struct members and methods, d: macro definitions, t: typedefs, e: enumerators, g: enumerations, s: structures, u: unions, p: function prototypes).
         is_symbol_regex (bool): If True, treat the symbol parameter as a regular expression pattern.
