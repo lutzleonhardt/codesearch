@@ -105,6 +105,8 @@ class CtagsTool(BaseTool):
 
         # Truncate results if needed
         truncated_lines = lines[:limit]
+        if len(lines) > limit:
+            truncated_lines.append(f"NOTE: The content is truncated, missing lines: {len(lines) - limit}")
 
         return {
             "total_entries": len(lines),

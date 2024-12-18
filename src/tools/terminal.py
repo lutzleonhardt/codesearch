@@ -1,3 +1,5 @@
+from typing_extensions import LiteralString
+
 from .base import BaseTool
 from ..shared import colored_print
 import subprocess
@@ -32,7 +34,10 @@ class TerminalTool(BaseTool):
 
         lines = output.splitlines()
         total = len(lines)
-        truncated = lines[:limit]
+        truncated: list[LiteralString] = lines[:limit]
+        if total > limit:
+            text: LiteralString = "NOTE: The content is truncated, missing lines: " + str(total - limit)
+            truncated.append(text)
         return {
             "total_lines": total,
             "returned_lines": len(truncated),

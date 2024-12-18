@@ -75,7 +75,7 @@ class DirectoryTool(BaseTool):
         :param exclude_dirs: A list of directory names to exclude.
         """
 
-        if max_depth is None:
+        if max_depth is None or max_depth == -1:
             # If not specified, treat as unlimited depth.
             max_depth = 999999  # effectively no limit
 
@@ -89,6 +89,14 @@ class DirectoryTool(BaseTool):
 
         total = len(all_entries)
         truncated = all_entries[:limit]
+        
+        if total > limit:
+            truncated.append({
+                "type": "note",
+                "path": f"NOTE: The content is truncated, missing entries: {total - limit}",
+                "size": 0,
+                "modified": datetime.now().isoformat()
+            })
 
         result = {
             "total_entries": total,
