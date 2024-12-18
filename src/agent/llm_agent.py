@@ -7,7 +7,7 @@ from typing import Any, List, TypeAlias, Optional
 from pydantic_ai import Agent, RunContext
 from pydantic_ai.models.openai import OpenAIModel
 
-from .prompts import SYSTEM_PROMPT, ASSISTANT_PROMPT
+from .prompts import SYSTEM_PROMPT
 from .schemas import AgentOutput, Deps, PartialContent
 from ..config.settings import API_KEY, MODEL
 from ..tools.ctags import CtagsTool
@@ -28,7 +28,7 @@ agent = Agent(
         MODEL,
         api_key=API_KEY
     ),
-    system_prompt=SYSTEM_PROMPT + ASSISTANT_PROMPT,
+    system_prompt=SYSTEM_PROMPT,
     deps_type=Deps,
     retries=2,
     result_type=AgentOutput
