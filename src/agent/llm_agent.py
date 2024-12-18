@@ -18,11 +18,13 @@ from ..tools.terminal import TerminalTool
 DirectoryResponse: TypeAlias = PartialContent[DirectoryPage]
 from ..tools.base import ToolAbortedException
 
+
 def format_message(content: Any) -> str:
     """Format message content to ensure it's a string."""
     if isinstance(content, str):
         return content
     return str(content)
+
 
 agent = Agent(
     model=OpenAIModel(
@@ -37,8 +39,10 @@ agent = Agent(
 
 logger = logging.getLogger(__name__)
 
+
 @agent.tool
-def directory(ctx: RunContext[Deps], relative_path_from_project_root: str, max_depth: int, exclude_dirs = None, file_filter: Optional[str] = None) -> PartialContent[DirectoryResponse]:
+def directory(ctx: RunContext[Deps], relative_path_from_project_root: str, max_depth: int, exclude_dirs=None,
+              file_filter: Optional[str] = None) -> PartialContent[DirectoryResponse]:
     """Get the directory structure at the given path. The result could be truncated (see result_is_complete). It also returns empty folders.
 
     Args:
@@ -65,7 +69,8 @@ def directory(ctx: RunContext[Deps], relative_path_from_project_root: str, max_d
             ]
         full_path = os.path.normpath(os.path.join(ctx.deps.project_root, relative_path_from_project_root))
         logger.info(f"Scanning directory at {full_path} with max_depth={max_depth}")
-        result = directory_tool.run(path=full_path, limit=ctx.deps.limit, max_depth=max_depth, exclude_dirs=exclude_dirs, verbose=ctx.deps.verbose, file_filter=file_filter)
+        result = directory_tool.run(path=full_path, limit=ctx.deps.limit, max_depth=max_depth,
+                                    exclude_dirs=exclude_dirs, verbose=ctx.deps.verbose, file_filter=file_filter)
         logger.debug(f"Found {result['total_entries']} entries, returning {result['returned_entries']}")
         result_is_complete = result["returned_entries"] == result["total_entries"]
         return PartialContent(
@@ -75,14 +80,36 @@ def directory(ctx: RunContext[Deps], relative_path_from_project_root: str, max_d
             error=False,
             result_is_complete=result_is_complete
         )
+    except ToolAbortedException:
+        logger.info(f"Directory scanning aborted for {relative_path_from_project_root}")
+        return PartialContent(
+            total_length=0,
+            returned_length=0,
+            content=[],
+            error=False,
+            aborted=True,
+        )
+    except Exception as e:
+        logger.error(f"Error scanning directory {relative_path_from_project_root}: {str(e)}")
+        return PartialContent(
+            total_length=0,
+            returned_length=0,
+            content=[],
+            error=True,
+            aborted=False,
+        )
+
 
 @agent.tool
 def terminal(ctx: RunContext[Deps], command: str) -> PartialContent[List[str]]:
     """
-    Run a terminal command to explore the codebase. 
-    Recommended commands: rg/grep (with context lines), find, ls, cat.
-    Parameter: command (string).
-    Result could be truncated.
+    Run a terminal command to explore the codebase.
+    Recommended commands: rg (with context lines), find, ls, cat. Always think about narrowing down the scope of the command!
+
+    Args:
+        command (str): The command to run.
+
+    PartialContent[List[str]]: Lines of the stdout the tool was written to. Result could be truncated!
     """
     terminal_tool = TerminalTool()
     try:
@@ -115,7 +142,8 @@ def terminal(ctx: RunContext[Deps], command: str) -> PartialContent[List[str]]:
 
 
 @agent.tool
-def ctags_readtags_tool(ctx: RunContext[Deps], action: str, relative_path_from_project_root: str = "", symbol: str = "", kind: str = "", is_symbol_regex: bool = False) -> PartialContent[List[str]]:
+def ctags_readtags_tool(ctx: RunContext[Deps], action: str, relative_path_from_project_root: str = "", symbol: str = "",
+                        kind: str = "", is_symbol_regex: bool = False) -> PartialContent[List[str]]:
     """
     Query tags using universal-ctags and readtags utilities. This tool provides access to ctags and readtags functionalities.
     You need ALWAYS to first generate the tags file using the 'generate_tags' action.
