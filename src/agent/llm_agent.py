@@ -158,8 +158,12 @@ def terminal(ctx: RunContext[Deps], command: str) -> PartialContent[List[str]]:
     """
     terminal_tool = TerminalTool()
     try:
-        #AI!: pass the root-dir as a parameter to this function
-        result = terminal_tool.run(command=command, limit=ctx.deps.limit, verbose=ctx.deps.verbose)
+        result = terminal_tool.run(
+            command=command, 
+            limit=ctx.deps.limit, 
+            verbose=ctx.deps.verbose,
+            root_dir=ctx.deps.project_root
+        )
         result_is_complete = result["returned_lines"] == result["total_lines"]
         return PartialContent(
             total_length=result["total_lines"],
