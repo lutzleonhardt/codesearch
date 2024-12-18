@@ -12,6 +12,7 @@ from .schemas import AgentOutput, Deps, PartialContent
 from ..config.settings import API_KEY, MODEL
 from ..tools.ctags import CtagsTool
 from ..tools.directory import DirectoryTool, DirectoryPage
+from ..tools.terminal import TerminalTool
 
 # Type alias for directory response
 DirectoryResponse: TypeAlias = PartialContent[DirectoryPage]
@@ -74,8 +75,27 @@ def directory(ctx: RunContext[Deps], relative_path_from_project_root: str, max_d
             error=False,
             result_is_complete=result_is_complete
         )
+
+@agent.tool
+def terminal(ctx: RunContext[Deps], command: str) -> PartialContent[List[str]]:
+    """
+    Run a terminal command to explore the codebase. 
+    Recommended commands: rg/grep (with context lines), find, ls, cat.
+    Parameter: command (string).
+    Result could be truncated.
+    """
+    terminal_tool = TerminalTool()
+    try:
+        result = terminal_tool.run(command=command, limit=ctx.deps.limit, verbose=ctx.deps.verbose)
+        result_is_complete = result["returned_lines"] == result["total_lines"]
+        return PartialContent(
+            total_length=result["total_lines"],
+            returned_length=result["returned_lines"],
+            content=result["lines"],
+            error=False,
+            result_is_complete=result_is_complete
+        )
     except ToolAbortedException:
-        logger.info(f"Directory scanning aborted for {relative_path_from_project_root}")
         return PartialContent(
             total_length=0,
             returned_length=0,
@@ -84,7 +104,7 @@ def directory(ctx: RunContext[Deps], relative_path_from_project_root: str, max_d
             aborted=True,
         )
     except Exception as e:
-        logger.error(f"Error scanning directory {relative_path_from_project_root}: {str(e)}")
+        logger.error(f"Error in terminal tool: {str(e)}")
         return PartialContent(
             total_length=0,
             returned_length=0,
@@ -92,6 +112,8 @@ def directory(ctx: RunContext[Deps], relative_path_from_project_root: str, max_d
             error=True,
             aborted=False,
         )
+
+
 @agent.tool
 def ctags_readtags_tool(ctx: RunContext[Deps], action: str, relative_path_from_project_root: str = "", symbol: str = "", kind: str = "", is_symbol_regex: bool = False) -> PartialContent[List[str]]:
     """
