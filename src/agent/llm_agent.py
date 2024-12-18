@@ -13,6 +13,7 @@ from ..config.settings import API_KEY, MODEL
 from ..tools.ctags import CtagsTool
 from ..tools.directory import DirectoryTool, DirectoryPage
 from ..tools.terminal import TerminalTool
+from ..tools.file_reader import FileReaderTool
 
 # Type alias for directory response
 DirectoryResponse: TypeAlias = PartialContent[DirectoryPage]
@@ -91,6 +92,48 @@ def directory(ctx: RunContext[Deps], relative_path_from_project_root: str, max_d
         )
     except Exception as e:
         logger.error(f"Error scanning directory {relative_path_from_project_root}: {str(e)}")
+        return PartialContent(
+            total_length=0,
+            returned_length=0,
+            content=[],
+            error=True,
+            aborted=False,
+        )
+
+
+@agent.tool
+def file_reader(ctx: RunContext[Deps], relative_path_from_project_root: str) -> PartialContent[List[str]]:
+    """
+    Read the contents of a file.
+
+    Args:
+        relative_path_from_project_root (str): The file path relative to the project root.
+
+    Returns:
+        PartialContent[List[str]]: A list of all lines in the file.
+    """
+    file_reader_tool = FileReaderTool()
+    full_path = os.path.normpath(os.path.join(ctx.deps.project_root, relative_path_from_project_root))
+    try:
+        result = file_reader_tool.run(file_path=full_path, verbose=ctx.deps.verbose)
+        # Since there's no truncation, result_is_complete is always True
+        return PartialContent(
+            total_length=result["total_lines"],
+            returned_length=result["returned_lines"],
+            content=result["lines"],
+            error=False,
+            result_is_complete=True
+        )
+    except ToolAbortedException:
+        return PartialContent(
+            total_length=0,
+            returned_length=0,
+            content=[],
+            error=False,
+            aborted=True,
+        )
+    except Exception as e:
+        logger.error(f"Error in file_reader tool: {str(e)}")
         return PartialContent(
             total_length=0,
             returned_length=0,
