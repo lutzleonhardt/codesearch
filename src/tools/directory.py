@@ -57,6 +57,7 @@ class DirectoryTool(BaseTool):
 
     def _run(
         self,
+        intention_of_this_call: str,
         path: str,
         limit: int = 50,
         max_depth: Optional[int] = None,
@@ -89,7 +90,7 @@ class DirectoryTool(BaseTool):
 
         total = len(all_entries)
         truncated = all_entries[:limit]
-        
+
         if total > limit:
             truncated.append({
                 "type": "note",

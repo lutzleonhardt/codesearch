@@ -1,7 +1,6 @@
 from typing import List
 from .base import BaseTool
 from ..shared import colored_print
-import os
 
 class FileReaderTool(BaseTool):
     def get_tool_text_start(self, file_path: str, **kwargs) -> List[str]:
@@ -17,7 +16,7 @@ class FileReaderTool(BaseTool):
         for line in result['lines']:
             colored_print(line, color="YELLOW")
 
-    def _run(self, file_path: str, **kwargs) -> dict:
+    def _run(self, intention_of_this_call: str, file_path: str, **kwargs) -> dict:
         with open(file_path, 'r', encoding='utf-8', errors='replace') as f:
             lines = f.read().splitlines()
         return {

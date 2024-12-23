@@ -1,12 +1,13 @@
 import asyncio
 import logging
 import os
+
 import click
 from colorama import init, Fore, Style
+
 from src.agent.prompts import USER_PROMPT
 from src.agent.schemas import Deps
 from src.shared.utils import colored_print
-from pydantic_ai.result import Cost  # Ensure this import matches your actual project structure
 
 init(autoreset=True)
 
@@ -56,7 +57,7 @@ async def run_interactive_session(deps):
     print_blue_line()
 
     while True:
-        colored_print("Enter query ('/exit' to quit): ", color="BLUE", linebreak=False)
+        colored_print("Enter query ('/exit' to quit): ", color="BLUE", linebreak=False, colorize_all=True)
         user_input = input()
         if user_input.lower() == '/exit':
             break
@@ -68,27 +69,28 @@ async def run_interactive_session(deps):
         # Hint: is is not possible to delete ToolReturn messages from the history
         processed_messages = []
         for msg in previous_messages:
-            if msg.role == 'tool-return':
-                # Create new ToolReturn with cleared content
-                msg = msg.__class__(
-                    tool_name=msg.tool_name,
-                    content="<content cleared>",
-                    tool_id=msg.tool_id,
-                    timestamp=msg.timestamp
-                )
+            # if msg.role == 'tool-return':
+            #     # Create new ToolReturn with cleared content
+            #     msg = msg.__class__(
+            #         tool_name=msg.tool_name,
+            #         content="<content cleared>",
+            #         tool_id=msg.tool_id,
+            #         timestamp=msg.timestamp
+            #     )
             processed_messages.append(msg)
 
         agent_output = await agent.run(
             USER_PROMPT.replace('{question}', user_input),
             deps=deps,
-            message_history=processed_messages
+            message_history=processed_messages,
         )
 
         # Update message history for next iteration
         previous_messages = agent_output.all_messages()
 
         # Print agent answer
-        colored_print(agent_output.data.answer, color="GREEN")
+        colored_print(agent_output.data.answer, color="GREEN", colorize_all=True)
+        colored_print("Confidence (1-10): " + str(agent_output.data.confidence_1_to_10), color="YELLOW", colorize_all=True)
 
         # Calculate and display token usage
         current_cost = agent_output.cost()
@@ -98,7 +100,7 @@ async def run_interactive_session(deps):
 
         # Log each message
         for msg in agent_output.all_messages():
-            logger.info(f"Message ({msg.role}): {msg}")
+            logger.info(f"Message: {msg}")
 
 async def async_main(verbose, root_dir, tools_result_limit):
     """Main entry point for codesearch CLI."""

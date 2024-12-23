@@ -41,7 +41,7 @@ class CtagsTool(BaseTool):
             return ""
         return f"total_entries: {result['total_entries']}, returned_entries: {result['returned_entries']}"
 
-    def _run(self, action: str, input_path: str = "", symbol: str = "", kind: str = "", limit: int = 50, exclude_dirs: List[str] = None, is_symbol_regex: bool = False, **kwargs) -> CtagsPage:
+    def _run(self, intention_of_this_call: str, action: str, input_path: str = "", symbol: str = "", kind: str = "", limit: int = 50, exclude_dirs: List[str] = None, is_symbol_regex: bool = False, **kwargs) -> CtagsPage:
         """Run ctags/readtags actions."""
         # Run actions based on provided parameters
         if os.path.isdir(input_path):

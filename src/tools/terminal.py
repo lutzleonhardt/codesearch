@@ -26,10 +26,10 @@ class TerminalTool(BaseTool):
         for line in result['lines']:
             colored_print(line, color="YELLOW")
 
-    def _run(self, command: str, limit: int = 50, root_dir: str = None, **kwargs) -> CommandResult:
+    def _run(self, intention_of_this_call: str, command: str, limit: int = 50, root_dir: str = None, **kwargs) -> CommandResult:
         try:
             output = subprocess.check_output(
-                shlex.split(command), 
+                shlex.split(command),
                 stderr=subprocess.STDOUT,
                 universal_newlines=True,
                 cwd=root_dir

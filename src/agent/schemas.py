@@ -31,4 +31,4 @@ class Deps:
 
 class AgentOutput(BaseModel):
     answer: str
-    error_tool_call: str
+    confidence_1_to_10: int
