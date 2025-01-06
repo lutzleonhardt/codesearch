@@ -1,8 +1,8 @@
-import string
+import threading
 from abc import ABC, abstractmethod
 from typing import List
-import threading
 
+from .types import BaseToolResult
 from ..shared import colored_print
 
 io_lock = threading.Lock()
@@ -13,7 +13,7 @@ class ToolAbortedException(Exception):
     pass
 
 class BaseTool(ABC):
-    def run(self, intention_of_this_call: str, **kwargs):
+    def run(self, intention_of_this_call: str, **kwargs) -> BaseToolResult:
         """Base run method that handles user approval and messaging"""
         with io_lock:
             result = self.get_tool_text_start(**kwargs)
@@ -49,7 +49,7 @@ class BaseTool(ABC):
             return result
 
     @abstractmethod
-    def _run(self, intention_of_this_call: str, **kwargs):
+    def _run(self, intention_of_this_call: str, **kwargs) -> BaseToolResult:
         """Implement the actual tool logic here"""
         pass
 
@@ -59,11 +59,11 @@ class BaseTool(ABC):
         pass
 
     @abstractmethod
-    def get_tool_text_end(self, result, **kwargs) ->  str:
+    def get_tool_text_end(self, result: BaseToolResult, **kwargs) -> str:
         """Return the tool description text to show after completion"""
         pass
 
     @abstractmethod
-    def print_verbose_output(self, result):
+    def print_verbose_output(self, result: BaseToolResult):
         """Print detailed tool output when verbose mode is enabled"""
         pass

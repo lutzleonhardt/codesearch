@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 import os
-from typing import Any, List, TypeAlias, Optional, Union
+from typing import Any, List, Optional
 
 from pydantic_ai import Agent, RunContext
 from pydantic_ai.models.anthropic import AnthropicModel
@@ -10,15 +10,12 @@ from pydantic_ai.models.anthropic import AnthropicModel
 from .prompts import SYSTEM_PROMPT
 from .schemas import AgentOutput, Deps, PartialContent
 from ..config.settings import API_KEY, MODEL
+from ..tools.base import ToolAbortedException
 from ..tools.ctags import CtagsTool
-from ..tools.directory import DirectoryTool, DirectoryPage
+from ..tools.directory import DirectoryTool
+from ..tools.file_reader import FileReaderTool
 from ..tools.file_writer import FileWriterTool
 from ..tools.terminal import TerminalTool
-from ..tools.file_reader import FileReaderTool
-
-# Type alias for directory response
-DirectoryResponse: TypeAlias = PartialContent[DirectoryPage]
-from ..tools.base import ToolAbortedException
 
 
 def format_message(content: Any) -> str:
@@ -71,7 +68,7 @@ def directory(ctx: RunContext[Deps], intention_of_this_call: str, relative_path_
         exclude_dirs = default_exclude_dirs + (additional_exclude_dirs or [])
         full_path = os.path.normpath(os.path.join(ctx.deps.project_root, relative_path_from_project_root))
         logger.info(f"Scanning directory at {full_path} with max_depth={max_depth}")
-        result: DirectoryPage = directory_tool.run(
+        result = directory_tool.run(
             intention_of_this_call=intention_of_this_call,
             path=full_path,
             limit=ctx.deps.limit,
@@ -81,12 +78,12 @@ def directory(ctx: RunContext[Deps], intention_of_this_call: str, relative_path_
             file_filter=file_filter,
             hide_empty_folder=hide_empty_folder
         )
-        logger.debug(f"Found {result['total_entries']} entries, returning {result['returned_entries']}")
-        result_is_complete = result["returned_entries"] == result["total_entries"]
+        logger.debug(f"Found {result['total_count']} entries, returning {result['returned_count']}")
+        result_is_complete = result["returned_count"] == result["total_count"]
         return PartialContent(
-            total_length=result["total_entries"],
-            returned_length=result["returned_entries"],
-            content=result["entries"],
+            total_length=result["total_count"],
+            returned_length=result["returned_count"],
+            content=result["items"],
             error=False,
             result_is_complete=result_is_complete
         )
@@ -138,7 +135,7 @@ def file_writer(
             content=content,
             verbose=ctx.deps.verbose
         )
-        written_bytes = result["written_bytes"]
+        written_bytes = result["total_count"]
         return PartialContent(
             total_length=written_bytes,
             returned_length=written_bytes,
@@ -186,9 +183,9 @@ PartialContent[List[str]]:
                                       verbose=ctx.deps.verbose)
         # Since there's no truncation, result_is_complete is always True
         return PartialContent(
-            total_length=result["total_lines"],
-            returned_length=result["returned_lines"],
-            content=result["lines"],
+            total_length=result["total_count"],
+            returned_length=result["returned_count"],
+            content=result["items"],
             error=False,
             result_is_complete=True
         )
@@ -233,11 +230,11 @@ def terminal(ctx: RunContext[Deps], intention_of_this_call: str, command: str) -
             verbose=ctx.deps.verbose,
             root_dir=ctx.deps.project_root
         )
-        result_is_complete = result["returned_lines"] == result["total_lines"]
+        result_is_complete = result["returned_count"] == result["total_count"]
         return PartialContent(
-            total_length=result["total_lines"],
-            returned_length=result["returned_lines"],
-            content=result["lines"],
+            total_length=result["total_count"],
+            returned_length=result["returned_count"],
+            content=result["items"],
             error=False,
             result_is_complete=result_is_complete
         )
@@ -299,11 +296,11 @@ def ctags_readtags_tool(ctx: RunContext[Deps], intention_of_this_call: str, acti
             verbose=ctx.deps.verbose,
             is_symbol_regex=is_symbol_regex,
         )
-        result_is_complete = result["returned_entries"] == result["total_entries"]
+        result_is_complete = result["returned_count"] == result["total_count"]
         return PartialContent(
-            total_length=result["total_entries"],
-            returned_length=result["returned_entries"],
-            content=result["entries"],
+            total_length=result["total_count"],
+            returned_length=result["returned_count"],
+            content=result["items"],
             error=False,
             result_is_complete=result_is_complete
         )

@@ -5,7 +5,7 @@ import json
 import logging
 import os
 from datetime import datetime
-from typing import List, TypedDict, Optional, Any, Dict
+from typing import List, Optional
 
 from .base import BaseTool
 from ..shared import colored_print
@@ -29,27 +29,12 @@ def entry_to_json(
     return json.dumps(entry_dict)
 
 
-class DirectoryPage(TypedDict):
-    """Page of directory entries as JSON strings.
-    
-    Each entry is a JSON string with format:
-    {
-        "name": str,          # File/directory name
-        "path": str,          # Full path relative to root
-        "type": str,         # "file" or "directory" 
-        "size": int,         # File size in bytes
-        "modified": str      # ISO format timestamp
-    }
-    """
-    total_entries: int
-    returned_entries: int 
-    entries: List[str]
-
+from .types import BaseToolResult
 
 class DirectoryTool(BaseTool):
-    def print_verbose_output(self, result: DirectoryPage):
+    def print_verbose_output(self, result: BaseToolResult):
         """Print detailed directory scan results in yellow color"""
-        for entry_json in result['entries']:
+        for entry_json in result['items']:
             try:
                 entry = json.loads(entry_json)
                 entry_type = entry['type'].ljust(10)
@@ -61,7 +46,7 @@ class DirectoryTool(BaseTool):
                 logger.error(f"Failed to parse entry JSON: {entry_json}")
 
     def get_tool_text_start(
-        self, path: str, limit: int, max_depth: Optional[int], exclude_dirs: List[str], 
+        self, path: str, limit: int, max_depth: Optional[int], exclude_dirs: List[str],
         file_filter: Optional[str] = None, hide_empty_folder: bool = False, **kwargs
     ) -> List[str]:
         depth_str = f"max_depth: {max_depth}" if max_depth is not None else ""
@@ -76,8 +61,8 @@ class DirectoryTool(BaseTool):
             f"hide_empty_folder: {hide_empty_folder}"
         ]
 
-    def get_tool_text_end(self, result: DirectoryPage, **kwargs) -> str:
-        return f"total_entries: {result['total_entries']}, returned_entries: {result['returned_entries']}"
+    def get_tool_text_end(self, result: BaseToolResult, **kwargs) -> str:
+        return f"total_entries: {result['total_count']}, returned_entries: {result['returned_count']}"
 
     def _run(
         self,
@@ -89,7 +74,7 @@ class DirectoryTool(BaseTool):
         file_filter: Optional[str] = None,
         hide_empty_folder: bool = False,
         **kwargs
-    ) -> DirectoryPage:
+    ) -> BaseToolResult:
         """
         Return a flattened list of directory entries starting from a given path,
         limited by a maximum traversal depth and optionally excluding certain directories.
@@ -112,11 +97,11 @@ class DirectoryTool(BaseTool):
 
         all_entries = []
         self._flatten_helper(
-            path, 
-            exclude_dirs, 
-            all_entries, 
-            current_depth=0, 
-            max_depth=max_depth, 
+            path,
+            exclude_dirs,
+            all_entries,
+            current_depth=0,
+            max_depth=max_depth,
             file_filter=file_filter,
             hide_empty_folder=hide_empty_folder
         )
@@ -132,11 +117,11 @@ class DirectoryTool(BaseTool):
                 modified=datetime.now().isoformat()
             ))
 
-        result = {
-            "total_entries": total,
-            "returned_entries": len(truncated),
-            "entries": truncated
-        }
+        result = BaseToolResult(
+            total_count=total,
+            returned_count=len(truncated),
+            items=truncated
+        )
         logger.info(f"Directory entries (truncated to {limit}): {result}")
         return result
 

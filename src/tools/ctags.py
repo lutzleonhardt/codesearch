@@ -1,21 +1,18 @@
 import logging
 import os
 import subprocess
-from typing import List, TypedDict
+from typing import List
 
 from .base import BaseTool, ToolAbortedException
 from ..shared import colored_print
 
 logger = logging.getLogger(__name__)
 
-class CtagsPage(TypedDict):
-    total_entries: int
-    returned_entries: int
-    entries: List[str]
+from .types import BaseToolResult
 
 class CtagsTool(BaseTool):
-    def print_verbose_output(self, result: CtagsPage):
-        for line in result["entries"]:
+    def print_verbose_output(self, result: BaseToolResult):
+        for line in result["items"]:
             colored_print(line, color="YELLOW")
 
     def get_tool_text_start(self, action: str, input_path: str = "", symbol: str = "", kind: str = "", is_symbol_regex: bool = False, **kwargs) -> List[str]:
@@ -35,13 +32,13 @@ class CtagsTool(BaseTool):
         ]
 
 
-    def get_tool_text_end(self, result: CtagsPage, **kwargs) -> str:
+    def get_tool_text_end(self, result: BaseToolResult, **kwargs) -> str:
         action = kwargs.get('action', '')
         if action == 'generate_tags':
             return ""
-        return f"total_entries: {result['total_entries']}, returned_entries: {result['returned_entries']}"
+        return f"total_entries: {result['total_count']}, returned_entries: {result['returned_count']}"
 
-    def _run(self, intention_of_this_call: str, action: str, input_path: str = "", symbol: str = "", kind: str = "", limit: int = 50, exclude_dirs: List[str] = None, is_symbol_regex: bool = False, **kwargs) -> CtagsPage:
+    def _run(self, intention_of_this_call: str, action: str, input_path: str = "", symbol: str = "", kind: str = "", limit: int = 50, exclude_dirs: List[str] = None, is_symbol_regex: bool = False, **kwargs) -> BaseToolResult:
         """Run ctags/readtags actions."""
         # Run actions based on provided parameters
         if os.path.isdir(input_path):
@@ -60,12 +57,12 @@ class CtagsTool(BaseTool):
                 cmd.append(input_path)
                 self._run_command(cmd)
             # After generation, no entries returned
-            return {"total_entries": 0, "returned_entries": 0, "entries": []}
+            return BaseToolResult(total_count=0, returned_count=0, items=[])
 
         # For readtags-based queries, ensure tags file exists
         if not os.path.exists(tags_file):
             logger.error("No tags file found. Run 'generate_tags' first.")
-            #return {"total_entries": 0, "returned_entries": 0, "entries": []}
+            #return BaseToolResult(total_count=0, returned_count=0, items=[])
             raise ToolAbortedException("No tags file found. Run 'generate_tags' first.")
 
         # Base command with extension fields and line numbers
@@ -97,7 +94,7 @@ class CtagsTool(BaseTool):
                     cmd = base_cmd + ["-Q", f'(eq? $kind "{kind}")', "-l"]
                 else:
                     logger.error(f"Unknown action: {action}")
-                    return {"total_entries": 0, "returned_entries": 0, "entries": []}
+                    return BaseToolResult(total_count=0, returned_count=0, items=[])
 
         else:
             logger.error(f"Unknown action: {action}")
@@ -112,11 +109,11 @@ class CtagsTool(BaseTool):
         if len(lines) > limit:
             truncated_lines.append(f"NOTE: The content is truncated, missing lines: {len(lines) - limit}")
 
-        return {
-            "total_entries": len(lines),
-            "returned_entries": len(truncated_lines),
-            "entries": truncated_lines
-        }
+        return BaseToolResult(
+            total_count=len(lines),
+            returned_count=len(truncated_lines),
+            items=truncated_lines
+        )
 
     def _run_command(self, cmd: List[str]) -> str:
         import subprocess
