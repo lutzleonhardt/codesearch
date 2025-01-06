@@ -4,14 +4,12 @@ from .types import BaseToolResult
 from ..shared import colored_print
 
 class FileReaderTool(BaseTool):
-    def get_tool_text_start(self, file_path: str, **kwargs) -> List[str]:
+    def get_tool_text_start(self, file_path: str, limit: int = 50, **kwargs) -> List[str]:
         return [
             "Read file",
             f"file_path: {file_path}",
+            f"limit: {limit} lines (it summarizes output if above)"
         ]
-
-    def get_tool_text_end(self, result: BaseToolResult, **kwargs) -> str:
-        return f"total_lines: {result['total_count']}"
 
     def print_verbose_output(self, result: BaseToolResult):
         for line in result['items']:
@@ -23,6 +21,5 @@ class FileReaderTool(BaseTool):
             lines = f.read().splitlines()
         return BaseToolResult(
             total_count=len(lines),
-            returned_count=len(lines),
             items=lines
         )

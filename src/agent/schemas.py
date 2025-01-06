@@ -11,16 +11,9 @@ class MaybeSummarizedContent(Generic[T]):
     """Generic wrapper for partial content responses"""
     total_length: int
     content: List[str]
-    returned_length: int = 0
     error: bool = False
     aborted: bool = False
-    result_is_complete: bool = True
     is_summarized: bool = False
-
-    #@property
-    #def result_is_complete(self) -> bool:
-    #    return self.returned_length == self.total_length
-
 
 @dataclass
 class Deps:

@@ -54,15 +54,12 @@ class DirectoryTool(BaseTool):
         return [
             "Query directory",
             f"path: {path}",
-            f"limit: {limit} entries",
+            f"limit: {limit} lines (it summarizes output if above)",
             depth_str,
             f"exclude_dirs: {str(exclude_dirs)}",
             filter_str,
             f"hide_empty_folder: {hide_empty_folder}"
         ]
-
-    def get_tool_text_end(self, result: BaseToolResult, **kwargs) -> str:
-        return f"total_entries: {result['total_count']}, returned_entries: {result['returned_count']}"
 
     def _run(
         self,
@@ -106,23 +103,10 @@ class DirectoryTool(BaseTool):
             hide_empty_folder=hide_empty_folder
         )
 
-        total = len(all_entries)
-        truncated = all_entries[:limit]
-
-        if total > limit:
-            truncated.append(entry_to_json(
-                path=f"NOTE: The content is truncated, missing entries: {total - limit}",
-                entry_type="note",
-                size=0,
-                modified=datetime.now().isoformat()
-            ))
-
         result = BaseToolResult(
-            total_count=total,
-            returned_count=len(truncated),
-            items=truncated
+            total_count=len(all_entries),
+            items=all_entries
         )
-        logger.info(f"Directory entries (truncated to {limit}): {result}")
         return result
 
     def _flatten_helper(

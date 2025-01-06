@@ -15,7 +15,7 @@ class CtagsTool(BaseTool):
         for line in result["items"]:
             colored_print(line, color="YELLOW")
 
-    def get_tool_text_start(self, action: str, input_path: str = "", symbol: str = "", kind: str = "", is_symbol_regex: bool = False, **kwargs) -> List[str]:
+    def get_tool_text_start(self, action: str, input_path: str = "", symbol: str = "", kind: str = "", limit: int = 50, is_symbol_regex: bool = False, **kwargs) -> List[str]:
         if action == 'generate_tags':
             return [
                 "Query ctags",
@@ -29,6 +29,7 @@ class CtagsTool(BaseTool):
             f"symbol: {symbol}",
             f"kind: {kind}",
             f"is_symbol_regex: {is_symbol_regex}",
+            f"limit: {limit} lines (it summarizes output if above)"
         ]
 
 
@@ -36,7 +37,10 @@ class CtagsTool(BaseTool):
         action = kwargs.get('action', '')
         if action == 'generate_tags':
             return ""
-        return f"total_entries: {result['total_count']}, returned_entries: {result['returned_count']}"
+        else:
+            return super().get_tool_text_end(result, **kwargs)
+
+
 
     def _run(self, intention_of_this_call: str, action: str, input_path: str = "", symbol: str = "", kind: str = "", limit: int = 50, exclude_dirs: List[str] = None, is_symbol_regex: bool = False, **kwargs) -> BaseToolResult:
         """Run ctags/readtags actions."""
@@ -105,14 +109,9 @@ class CtagsTool(BaseTool):
         lines = [line.strip() for line in output.splitlines() if line.strip()]
 
         # Truncate results if needed
-        truncated_lines = lines[:limit]
-        if len(lines) > limit:
-            truncated_lines.append(f"NOTE: The content is truncated, missing lines: {len(lines) - limit}")
-
         return BaseToolResult(
             total_count=len(lines),
-            returned_count=len(truncated_lines),
-            items=truncated_lines
+            items=lines
         )
 
     def _run_command(self, cmd: List[str]) -> str:

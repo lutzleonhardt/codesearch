@@ -24,6 +24,5 @@ class FileWriterTool(BaseTool):
             written_bytes = f.write(content)
         return BaseToolResult(
             total_count=written_bytes,
-            returned_count=written_bytes,
             items=[f"Wrote {written_bytes} bytes"]
         )

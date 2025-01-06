@@ -57,7 +57,6 @@ class BaseTool(ABC):
 
             if kwargs.get('verbose') and result:
                 # Print original output first
-                colored_print("Original output:", color="YELLOW", colorize_all=True)
                 self.print_verbose_output(result)
 
                 # Print summary if it exists
