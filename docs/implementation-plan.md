@@ -288,22 +288,14 @@ This plan provides a detailed roadmap and shows you how to weave colorized outpu
 
 
 # Next ToDos
-- [ ] add a note "Content is truncated, missing lines: {number of lines missing}" when the result is truncated
-- [ ] Tool CTags
-  - [ ] possibility to pass a language
-  - [x] action: generate_tags does not need to show parameters
-- [ ] Tool Directory
-    - [x] use a regex filter for filtering files
-    - [x] extend the exclude_filter to exclude files
-- [ ] Tool Terminal
-  - [ ] preferred tools: rg, grep, find, ls.
-- [ ] Tool ReadFile
-    - [ ] no limit on file size
-later:
-- [ ] do recognize / commands and when thy are wrong
 - [ ] /clear or /reset
+- [ ] add /copy, /copy-all and /paste
 - [ ] cursor navigation
 - [ ] input history
 - [ ] add streaming
 
 
+### Bugs
+- pipes in commands does not work
+- if I pass paths to the shell -> exception 404
+- accumulate the cost of the summarization agent
