@@ -1,4 +1,4 @@
-from src.agent.llm_agent import Agent
+from src.agent.main_agent import Agent
 from src.agent.schemas import AgentInput, AgentOutput, ToolRequest
 from unittest.mock import patch
 import pytest

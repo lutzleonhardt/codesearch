@@ -41,11 +41,11 @@ agent = Agent(
 
 logger = logging.getLogger(__name__)
 
-
 @agent.tool
 def directory(ctx: RunContext[Deps], intention_of_this_call: str, relative_path_from_project_root: str, max_depth: int,
-              exclude_dirs=None,
-              file_filter: Optional[str] = None) -> PartialContent[DirectoryResponse]:
+              additional_exclude_dirs=None,
+              file_filter: Optional[str] = None,
+              hide_empty_folder: bool = False) -> PartialContent[List[str]]:
     """Get the directory structure at the given path. The result could be truncated (see result_is_complete). It also returns empty folders.
 
     Args:
@@ -53,29 +53,34 @@ def directory(ctx: RunContext[Deps], intention_of_this_call: str, relative_path_
         intention_of_this_call (required): Provide a clear, specific statement of what you aim to accomplish with this tool invocation. This information will be used by a secondary AI agent to extract and summarize only the content directly relevant to your stated goal, helping reduce context and focus the response. The more precise you are about your intended outcome, the more accurately it will be filtered and compressed.
         relative_path_from_project_root: The relative path from the project root to analyze
         max_depth: Maximum depth to traverse in the directory tree
-        exclude_dirs: A list of directories to exclude from the directory tree. Defaults to: [".git", ".hg", ".svn",
-            ".DS_Store", "node_modules", "bower_components", "dist", "build", "env", "venv", ".venv", "__pycache__",
-            ".pytest_cache", ".mypy_cache", ".cache", ".idea", ".vscode", "vendor", "out", "target", ".bundle",
-            "coverage", "bin"]
+        additional_exclude_dirs: Additional directories to exclude beyond the default exclusions. The defaults are: [".git", ".hg", ".svn", ".DS_Store", "node_modules", "bower_components", "dist", "build", "env", "venv", ".venv", "__pycache__", ".pytest_cache", ".mypy_cache", ".cache", ".idea", ".vscode", "vendor", "out", "target", ".bundle", "coverage", "bin", "nuget", ".nuget"]
         file_filter: Optional pattern to filter files (e.g. "*.py" for Python files). It will also return empty folders.
+        hide_empty_folder: If True, folders that have no matching files (based on file_filter) and no non-empty subfolders will be hidden from the results.
 
     Returns:
-        PartialContent[List[CtagsEntry]]: A paginated response containing the directory structure. The result could be truncated (see result_is_complete).
+        PartialContent[List[str]]: A paginated response containing the directory structure. The result could be truncated (see result_is_complete).
     """
     directory_tool = DirectoryTool()
     try:
-        if exclude_dirs is None:
-            exclude_dirs = [
+        default_exclude_dirs = [
                 ".git", ".hg", ".svn", ".DS_Store", "node_modules", "bower_components",
                 "dist", "build", "env", "venv", ".venv", "__pycache__", ".pytest_cache",
                 ".mypy_cache", ".cache", ".idea", ".vscode", "vendor", "out", "target",
-                ".bundle", "coverage", "bin"
+                ".bundle", "coverage", "bin", "nuget", ".nuget"
             ]
+        exclude_dirs = default_exclude_dirs + (additional_exclude_dirs or [])
         full_path = os.path.normpath(os.path.join(ctx.deps.project_root, relative_path_from_project_root))
         logger.info(f"Scanning directory at {full_path} with max_depth={max_depth}")
-        result = directory_tool.run(intention_of_this_call=intention_of_this_call, path=full_path, limit=ctx.deps.limit,
-                                    max_depth=max_depth,
-                                    exclude_dirs=exclude_dirs, verbose=ctx.deps.verbose, file_filter=file_filter)
+        result: DirectoryPage = directory_tool.run(
+            intention_of_this_call=intention_of_this_call,
+            path=full_path,
+            limit=ctx.deps.limit,
+            max_depth=max_depth,
+            exclude_dirs=exclude_dirs,
+            verbose=ctx.deps.verbose,
+            file_filter=file_filter,
+            hide_empty_folder=hide_empty_folder
+        )
         logger.debug(f"Found {result['total_entries']} entries, returning {result['returned_entries']}")
         result_is_complete = result["returned_entries"] == result["total_entries"]
         return PartialContent(

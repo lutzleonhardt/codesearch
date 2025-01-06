@@ -63,7 +63,7 @@ async def run_interactive_session(deps):
             break
 
         print() # new line
-        from .agent.llm_agent import agent
+        from .agent.main_agent import agent
         # Create a copy of messages with cleared ToolReturn content
         # This is to clean up the context for the LLM, we keep only the result
         # Hint: is is not possible to delete ToolReturn messages from the history

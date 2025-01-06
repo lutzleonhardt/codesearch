@@ -1,45 +1,68 @@
 # /home/lutz/PycharmProjects/codesearch/src/tools/directory.py
 
 import fnmatch
+import json
 import logging
 import os
 from datetime import datetime
-from typing import List, TypedDict, Optional
+from typing import List, TypedDict, Optional, Any, Dict
 
 from .base import BaseTool
 from ..shared import colored_print
 
 logger = logging.getLogger(__name__)
 
-
-class DirEntry(TypedDict):
-    """Represents either a file or directory entry in a flattened structure."""
-    type: str  # "file" or "directory"
-    path: str
-    size: int
+def entry_to_json(
+    path: str,
+    entry_type: str,
+    size: int,
     modified: str
-
+) -> str:
+    """Convert entry data to JSON string format."""
+    entry_dict = {
+        "name": os.path.basename(path),
+        "path": path,
+        "type": entry_type,
+        "size": size,
+        "modified": modified
+    }
+    return json.dumps(entry_dict)
 
 
 class DirectoryPage(TypedDict):
-    """Page of directory entries."""
+    """Page of directory entries as JSON strings.
+    
+    Each entry is a JSON string with format:
+    {
+        "name": str,          # File/directory name
+        "path": str,          # Full path relative to root
+        "type": str,         # "file" or "directory" 
+        "size": int,         # File size in bytes
+        "modified": str      # ISO format timestamp
+    }
+    """
     total_entries: int
-    returned_entries: int
-    entries: List[DirEntry]
+    returned_entries: int 
+    entries: List[str]
 
 
 class DirectoryTool(BaseTool):
     def print_verbose_output(self, result: DirectoryPage):
         """Print detailed directory scan results in yellow color"""
-        for entry in result['entries']:
-            entry_type = entry['type'].ljust(10)
-            path = entry['path']
-            size = f"size={entry['size']}"
-            modified = f"modified={entry['modified']}"
-            colored_print(f"{entry_type} {path} ({size}, {modified})", color="YELLOW")
+        for entry_json in result['entries']:
+            try:
+                entry = json.loads(entry_json)
+                entry_type = entry['type'].ljust(10)
+                path = entry['path']
+                size = f"size={entry['size']}"
+                modified = f"modified={entry['modified']}"
+                colored_print(f"{entry_type} {path} ({size}, {modified})", color="YELLOW")
+            except json.JSONDecodeError:
+                logger.error(f"Failed to parse entry JSON: {entry_json}")
 
     def get_tool_text_start(
-        self, path: str, limit: int, max_depth: Optional[int], exclude_dirs: List[str], file_filter: Optional[str] = None, **kwargs
+        self, path: str, limit: int, max_depth: Optional[int], exclude_dirs: List[str], 
+        file_filter: Optional[str] = None, hide_empty_folder: bool = False, **kwargs
     ) -> List[str]:
         depth_str = f"max_depth: {max_depth}" if max_depth is not None else ""
         filter_str = f"file_filter: {file_filter}" if file_filter is not None else ""
@@ -49,7 +72,8 @@ class DirectoryTool(BaseTool):
             f"limit: {limit} entries",
             depth_str,
             f"exclude_dirs: {str(exclude_dirs)}",
-            filter_str
+            filter_str,
+            f"hide_empty_folder: {hide_empty_folder}"
         ]
 
     def get_tool_text_end(self, result: DirectoryPage, **kwargs) -> str:
@@ -63,6 +87,7 @@ class DirectoryTool(BaseTool):
         max_depth: Optional[int] = None,
         exclude_dirs: List[str] = None,
         file_filter: Optional[str] = None,
+        hide_empty_folder: bool = False,
         **kwargs
     ) -> DirectoryPage:
         """
@@ -86,18 +111,26 @@ class DirectoryTool(BaseTool):
         )
 
         all_entries = []
-        self._flatten_helper(path, exclude_dirs, all_entries, current_depth=0, max_depth=max_depth, file_filter=file_filter)
+        self._flatten_helper(
+            path, 
+            exclude_dirs, 
+            all_entries, 
+            current_depth=0, 
+            max_depth=max_depth, 
+            file_filter=file_filter,
+            hide_empty_folder=hide_empty_folder
+        )
 
         total = len(all_entries)
         truncated = all_entries[:limit]
 
         if total > limit:
-            truncated.append({
-                "type": "note",
-                "path": f"NOTE: The content is truncated, missing entries: {total - limit}",
-                "size": 0,
-                "modified": datetime.now().isoformat()
-            })
+            truncated.append(entry_to_json(
+                path=f"NOTE: The content is truncated, missing entries: {total - limit}",
+                entry_type="note",
+                size=0,
+                modified=datetime.now().isoformat()
+            ))
 
         result = {
             "total_entries": total,
@@ -111,36 +144,22 @@ class DirectoryTool(BaseTool):
         self,
         path: str,
         exclude_dirs: List[str],
-        flattened: List[DirEntry],
+        flattened: List[str],
         current_depth: int,
         max_depth: int,
-        file_filter: Optional[str] = None
-    ):
+        file_filter: Optional[str] = None,
+        hide_empty_folder: bool = False
+    ) -> bool:
         """
         Recursively traverse the directory structure up to max_depth, adding entries to flattened list.
-
-        :param path: Current directory path.
-        :param exclude_dirs: Directories to exclude.
-        :param flattened: The cumulative list of directory entries.
-        :param current_depth: Current traversal depth.
-        :param max_depth: Maximum depth allowed.
+        Returns True if any content was added (directory or matching files), False otherwise.
         """
         # Stop if we've exceeded max depth
         if current_depth > max_depth:
-            return
+            return False
 
-        # Add current directory entry
-        try:
-            dir_stat = os.stat(path)
-            flattened.append({
-                "type": "directory",
-                "path": path,
-                "size": 0,
-                "modified": datetime.fromtimestamp(dir_stat.st_mtime).isoformat()
-            })
-        except (PermissionError, OSError) as e:
-            logger.warning(f"Error accessing {path}: {e}")
-            return
+        has_content = False
+        dir_entry = None
 
         # Try listing contents of the current directory
         try:
@@ -167,28 +186,41 @@ class DirectoryTool(BaseTool):
             if file_filter is None or fnmatch.fnmatch(file_entry.name, file_filter):
                 try:
                     stat = file_entry.stat()
-                    flattened.append({
-                        "type": "file",
-                        "path": file_entry.path,
-                        "size": stat.st_size,
-                        "modified": datetime.fromtimestamp(stat.st_mtime).isoformat()
-                    })
-                except PermissionError as e:
-                    logger.warning(
-                        f"Permission denied accessing {file_entry.path}: {e}"
-                    )
-                    # Skip this file
-                except OSError as e:
-                    logger.error(f"Error accessing {file_entry.path}: {e}")
-                    # Skip this file
+                    flattened.append(entry_to_json(
+                        path=file_entry.path,
+                        entry_type="file",
+                        size=stat.st_size,
+                        modified=datetime.fromtimestamp(stat.st_mtime).isoformat()
+                    ))
+                    has_content = True
+                except (PermissionError, OSError) as e:
+                    logger.warning(f"Error accessing {file_entry.path}: {e}")
 
         # Recurse into directories
         for dir_entry in dirs:
-            self._flatten_helper(
+            has_subdir_content = self._flatten_helper(
                 dir_entry.path,
                 exclude_dirs,
                 flattened,
                 current_depth=current_depth+1,
                 max_depth=max_depth,
-                file_filter=file_filter
+                file_filter=file_filter,
+                hide_empty_folder=hide_empty_folder
             )
+            has_content = has_content or has_subdir_content
+
+        # Add current directory entry if it has content or we're not hiding empty folders
+        if not hide_empty_folder or has_content:
+            try:
+                dir_stat = os.stat(path)
+                flattened.append(entry_to_json(
+                    path=path,
+                    entry_type="directory",
+                    size=0,
+                    modified=datetime.fromtimestamp(dir_stat.st_mtime).isoformat()
+                ))
+            except (PermissionError, OSError) as e:
+                logger.warning(f"Error accessing {path}: {e}")
+                return has_content
+
+        return has_content
