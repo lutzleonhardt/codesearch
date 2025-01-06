@@ -8,7 +8,7 @@ from pydantic_ai import Agent, RunContext
 from pydantic_ai.models.anthropic import AnthropicModel
 
 from .prompts import SYSTEM_PROMPT
-from .schemas import AgentOutput, Deps, PartialContent
+from .schemas import AgentOutput, Deps, MaybeSummarizedContent
 from ..config.settings import API_KEY, MODEL
 from ..tools.base import ToolAbortedException
 from ..tools.ctags import CtagsTool
@@ -39,10 +39,10 @@ agent = Agent(
 logger = logging.getLogger(__name__)
 
 @agent.tool
-def directory(ctx: RunContext[Deps], intention_of_this_call: str, relative_path_from_project_root: str, max_depth: int,
+async def directory(ctx: RunContext[Deps], intention_of_this_call: str, relative_path_from_project_root: str, max_depth: int,
               additional_exclude_dirs=None,
               file_filter: Optional[str] = None,
-              hide_empty_folder: bool = False) -> PartialContent[List[str]]:
+              hide_empty_folder: bool = False) -> MaybeSummarizedContent[List[str]]:
     """Get the directory structure at the given path (also recursively). Use it for get an overview of the project structure and for filter files and folders. It also provides metadata for lastModified and fileSize.
 
     Args:
@@ -55,7 +55,7 @@ def directory(ctx: RunContext[Deps], intention_of_this_call: str, relative_path_
         hide_empty_folder: If True, folders that have no matching files (based on file_filter) and no non-empty subfolders will be hidden from the results.
 
     Returns:
-        PartialContent[List[str]]: A response containing the directory structure. The result could be truncated (see result_is_complete).
+        MaybeSummarizedContent[List[str]]: A response containing the directory structure. The result could be truncated (see result_is_complete).
     """
     directory_tool = DirectoryTool()
     try:
@@ -68,7 +68,7 @@ def directory(ctx: RunContext[Deps], intention_of_this_call: str, relative_path_
         exclude_dirs = default_exclude_dirs + (additional_exclude_dirs or [])
         full_path = os.path.normpath(os.path.join(ctx.deps.project_root, relative_path_from_project_root))
         logger.info(f"Scanning directory at {full_path} with max_depth={max_depth}")
-        result = directory_tool.run(
+        result = await directory_tool.run(
             intention_of_this_call=intention_of_this_call,
             path=full_path,
             limit=ctx.deps.limit,
@@ -80,7 +80,7 @@ def directory(ctx: RunContext[Deps], intention_of_this_call: str, relative_path_
         )
         logger.debug(f"Found {result['total_count']} entries, returning {result['returned_count']}")
         result_is_complete = result["returned_count"] == result["total_count"]
-        return PartialContent(
+        return MaybeSummarizedContent(
             total_length=result["total_count"],
             returned_length=result["returned_count"],
             content=result["items"],
@@ -89,7 +89,7 @@ def directory(ctx: RunContext[Deps], intention_of_this_call: str, relative_path_
         )
     except ToolAbortedException:
         logger.info(f"Directory scanning aborted for {relative_path_from_project_root}")
-        return PartialContent(
+        return MaybeSummarizedContent(
             total_length=0,
             returned_length=0,
             content=[],
@@ -98,7 +98,7 @@ def directory(ctx: RunContext[Deps], intention_of_this_call: str, relative_path_
         )
     except Exception as e:
         logger.error(f"Error scanning directory {relative_path_from_project_root}: {str(e)}")
-        return PartialContent(
+        return MaybeSummarizedContent(
             total_length=0,
             returned_length=0,
             content=[],
@@ -107,12 +107,12 @@ def directory(ctx: RunContext[Deps], intention_of_this_call: str, relative_path_
         )
 
 @agent.tool
-def file_writer(
+async def file_writer(
     ctx: RunContext[Deps],
     intention_of_this_call: str,
     relative_path_from_project_root: str,
     content: str
-) -> PartialContent[int]:
+) -> MaybeSummarizedContent[int]:
     """
     Overwrite or create a file with the provided content.
 
@@ -129,14 +129,14 @@ def file_writer(
     )
 
     try:
-        result = file_writer_tool.run(
+        result = await file_writer_tool.run(
             intention_of_this_call=intention_of_this_call,
             file_path=full_path,
             content=content,
             verbose=ctx.deps.verbose
         )
         written_bytes = result["total_count"]
-        return PartialContent(
+        return MaybeSummarizedContent(
             total_length=written_bytes,
             returned_length=written_bytes,
             content=written_bytes,
@@ -144,7 +144,7 @@ def file_writer(
             result_is_complete=True
         )
     except ToolAbortedException:
-        return PartialContent(
+        return MaybeSummarizedContent(
             total_length=0,
             returned_length=0,
             content=[],
@@ -153,7 +153,7 @@ def file_writer(
         )
     except Exception as e:
         logger.error(f"Error in file_writer tool: {str(e)}")
-        return PartialContent(
+        return MaybeSummarizedContent(
             total_length=0,
             returned_length=0,
             content=[],
@@ -163,8 +163,8 @@ def file_writer(
 
 
 @agent.tool
-def file_reader(ctx: RunContext[Deps], intention_of_this_call: str, relative_path_from_project_root: str) -> \
-PartialContent[List[str]]:
+async def file_reader(ctx: RunContext[Deps], intention_of_this_call: str, relative_path_from_project_root: str) -> \
+MaybeSummarizedContent[List[str]]:
     """
     Read the contents of a file.
 
@@ -174,15 +174,15 @@ PartialContent[List[str]]:
         relative_path_from_project_root (str): The file path relative to the project root.
 
     Returns:
-        PartialContent[List[str]]: A list of all lines in the file.
+        MaybeSummarizedContent[List[str]]: A list of all lines in the file.
     """
     file_reader_tool = FileReaderTool()
     full_path = os.path.normpath(os.path.join(ctx.deps.project_root, relative_path_from_project_root))
     try:
-        result = file_reader_tool.run(intention_of_this_call=intention_of_this_call, file_path=full_path,
+        result = await file_reader_tool.run(intention_of_this_call=intention_of_this_call, file_path=full_path,
                                       verbose=ctx.deps.verbose)
         # Since there's no truncation, result_is_complete is always True
-        return PartialContent(
+        return MaybeSummarizedContent(
             total_length=result["total_count"],
             returned_length=result["returned_count"],
             content=result["items"],
@@ -190,7 +190,7 @@ PartialContent[List[str]]:
             result_is_complete=True
         )
     except ToolAbortedException:
-        return PartialContent(
+        return MaybeSummarizedContent(
             total_length=0,
             returned_length=0,
             content=[],
@@ -199,7 +199,7 @@ PartialContent[List[str]]:
         )
     except Exception as e:
         logger.error(f"Error in file_reader tool: {str(e)}")
-        return PartialContent(
+        return MaybeSummarizedContent(
             total_length=0,
             returned_length=0,
             content=[],
@@ -209,58 +209,61 @@ PartialContent[List[str]]:
 
 
 @agent.tool
-def terminal(ctx: RunContext[Deps], intention_of_this_call: str, command: str) -> PartialContent[List[str]]:
+async def terminal(ctx: RunContext[Deps], intention_of_this_call: str, command: str) -> MaybeSummarizedContent[List[str]]:
     """
     Run a terminal command to explore the codebase.
-    Recommended commands: rg (with context lines), find, ls, cat. Always think about narrowing down the scope of the command!
+    Recommended commands: rg (with context lines), find, ls, cat. Always think about narrowing down the scope of the command (in big codebases)!
 
     Args:
         ctx: The run context with dependencies
         intention_of_this_call (required): Provide a clear, specific statement of what you aim to accomplish with this tool invocation. This information will be used by a secondary AI agent to extract and summarize only the content directly relevant to your stated goal, helping reduce context and focus the response. The more precise you are about your intended outcome, the more accurately it will be filtered and compressed.
         command (str): The command to run.
 
-    PartialContent[List[str]]: Lines of the stdout the tool was written to. Result could be truncated!
+    MaybeSummarizedContent[List[str]]: Lines of the stdout the tool was written to. Result could be truncated!
     """
     terminal_tool = TerminalTool()
     try:
-        result = terminal_tool.run(
+        result = await terminal_tool.run(
             intention_of_this_call=intention_of_this_call,
             command=command,
             limit=ctx.deps.limit,
             verbose=ctx.deps.verbose,
             root_dir=ctx.deps.project_root
         )
-        result_is_complete = result["returned_count"] == result["total_count"]
-        return PartialContent(
+
+        # Check if result was summarized
+        is_summarized = result.get("is_summarized", False)
+        content = result.get("summary", result["items"]) if is_summarized else result["items"]
+
+        return MaybeSummarizedContent(
             total_length=result["total_count"],
-            returned_length=result["returned_count"],
-            content=result["items"],
+            content=content,
             error=False,
-            result_is_complete=result_is_complete
+            is_summarized=is_summarized
         )
     except ToolAbortedException:
-        return PartialContent(
+        return MaybeSummarizedContent(
             total_length=0,
-            returned_length=0,
             content=[],
             error=False,
             aborted=True,
+            is_summarized=False
         )
     except Exception as e:
         logger.error(f"Error in terminal tool: {str(e)}")
-        return PartialContent(
+        return MaybeSummarizedContent(
             total_length=0,
-            returned_length=0,
             content=[],
             error=True,
             aborted=False,
+            is_summarized=False
         )
 
 
 @agent.tool
-def ctags_readtags_tool(ctx: RunContext[Deps], intention_of_this_call: str, action: str,
+async def ctags_readtags_tool(ctx: RunContext[Deps], intention_of_this_call: str, action: str,
                         relative_path_from_project_root: str = "", symbol: str = "",
-                        kind: str = "", is_symbol_regex: bool = False) -> PartialContent[List[str]]:
+                        kind: str = "", is_symbol_regex: bool = False) -> MaybeSummarizedContent[List[str]]:
     """
     Use this to get symbol information about the codebase(i.e. how many classes, where is this function,  method, variable, ...see kind argument).
     Query tags using universal-ctags and readtags utilities. This tool provides access to ctags and readtags functionalities.
@@ -280,13 +283,13 @@ def ctags_readtags_tool(ctx: RunContext[Deps], intention_of_this_call: str, acti
         is_symbol_regex (bool): If True, treat the symbol parameter as a regular expression pattern.
 
     Returns:
-        PartialContent[List[str]]: A list of raw ctags output lines. Each line contains tab-separated fields with symbol information. sample:
+        MaybeSummarizedContent[List[str]]: A list of raw ctags output lines. Each line contains tab-separated fields with symbol information. sample:
         _run    src/tools/base.py       /^    def _run(self, **kwargs):$/;"     kind:m  class:BaseTool
     """
     input_path = os.path.normpath(os.path.join(ctx.deps.project_root, relative_path_from_project_root))
     ctags_tool = CtagsTool()
     try:
-        result = ctags_tool.run(
+        result = await ctags_tool.run(
             intention_of_this_call=intention_of_this_call,
             action=action,
             input_path=input_path,
@@ -297,7 +300,7 @@ def ctags_readtags_tool(ctx: RunContext[Deps], intention_of_this_call: str, acti
             is_symbol_regex=is_symbol_regex,
         )
         result_is_complete = result["returned_count"] == result["total_count"]
-        return PartialContent(
+        return MaybeSummarizedContent(
             total_length=result["total_count"],
             returned_length=result["returned_count"],
             content=result["items"],
@@ -305,7 +308,7 @@ def ctags_readtags_tool(ctx: RunContext[Deps], intention_of_this_call: str, acti
             result_is_complete=result_is_complete
         )
     except ToolAbortedException:
-        return PartialContent(
+        return MaybeSummarizedContent(
             total_length=0,
             returned_length=0,
             content=[],
@@ -314,7 +317,7 @@ def ctags_readtags_tool(ctx: RunContext[Deps], intention_of_this_call: str, acti
         )
     except Exception as e:
         logger.error(f"Error in ctags tool: {str(e)}")
-        return PartialContent(
+        return MaybeSummarizedContent(
             total_length=0,
             returned_length=0,
             content=[],

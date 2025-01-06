@@ -1,9 +1,11 @@
 import threading
+import asyncio
 from abc import ABC, abstractmethod
 from typing import List
 
 from .types import BaseToolResult
 from ..shared import colored_print
+from ..summarize_agent.main_agent import summarize_tool_output
 
 io_lock = threading.Lock()
 
@@ -13,7 +15,7 @@ class ToolAbortedException(Exception):
     pass
 
 class BaseTool(ABC):
-    def run(self, intention_of_this_call: str, **kwargs) -> BaseToolResult:
+    async def run(self, intention_of_this_call: str, **kwargs) -> BaseToolResult:
         """Base run method that handles user approval and messaging"""
         with io_lock:
             result = self.get_tool_text_start(**kwargs)
@@ -38,8 +40,32 @@ class BaseTool(ABC):
 
             result = self._run(intention_of_this_call, **kwargs)
 
+            # Handle summarization if needed
+            limit = kwargs.get('limit', 50)
+            if len(result['items']) > limit:
+                summary = await summarize_tool_output(
+                    result['items'],
+                    intention_of_this_call,
+                    max_lines=limit,
+                    verbose=kwargs.get('verbose', False)
+                )
+                result['summary'] = summary
+                result['is_summarized'] = True
+            else:
+                result['summary'] = None
+                result['is_summarized'] = False
+
             if kwargs.get('verbose') and result:
+                # Print original output first
+                colored_print("Original output:", color="YELLOW", colorize_all=True)
                 self.print_verbose_output(result)
+
+                # Print summary if it exists
+                if result.get('is_summarized'):
+                    print()
+                    colored_print("Summarized output:", color="YELLOW", colorize_all=True)
+                    for line in result['summary']:
+                        colored_print(line, color="YELLOW")
 
             if result:
                 end_text = self.get_tool_text_end(result, **kwargs)
@@ -58,10 +84,10 @@ class BaseTool(ABC):
         """Return the tool description text to show before approval"""
         pass
 
-    @abstractmethod
     def get_tool_text_end(self, result: BaseToolResult, **kwargs) -> str:
-        """Return the tool description text to show after completion"""
-        pass
+        if result.get('is_summarized'):
+            return f"summarized (original total_lines: {result['total_count']})"
+        return f"total_lines: {result['total_count']}"
 
     @abstractmethod
     def print_verbose_output(self, result: BaseToolResult):
