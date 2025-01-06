@@ -7,3 +7,5 @@ pytest>=7.4.0
 pytest-cov>=4.1.0
 pydantic~=2.10.3
 click~=8.1.7
+prompt_toolkit>=3.0.48
+pyperclip>=1.8.2

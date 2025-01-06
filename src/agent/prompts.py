@@ -38,3 +38,7 @@ Make a **Step-by-Step Plan**:
    - Propose potential solution approaches and assign each a confidence level.
    - Select the approach with the highest confidence.
 """
+
+SPEC_PROMPT = """Create a specification named: {name}
+
+Please provide a detailed specification document that outlines the key components, requirements, and design considerations."""

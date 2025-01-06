@@ -3,7 +3,11 @@ import logging
 import os
 
 import click
-from colorama import init, Fore, Style
+from colorama import init
+from prompt_toolkit import PromptSession, HTML
+from prompt_toolkit.patch_stdout import patch_stdout
+from prompt_toolkit.styles import Style
+from pydantic_ai.messages import ModelRequest, SystemPromptPart, UserPromptPart
 
 from src.agent.prompts import USER_PROMPT
 from src.agent.schemas import Deps
@@ -44,10 +48,7 @@ def print_token_usage(current_cost, total_cost):
     print() # new line
     print(f"Tokens: {current_cost.request_tokens/1000:.1f}k sent, {current_cost.response_tokens/1000:.1f}k received. Session cost: {total_cost/1000:.1f}k")
 
-def print_blue_line():
-    # Print blue separator line
-    terminal_width = os.get_terminal_size().columns
-    print(f"{Fore.BLUE}{Style.BRIGHT}{'━' * terminal_width}{Style.RESET_ALL}")
+from .commands import print_blue_line, handle_command, CommandType
 
 
 async def run_interactive_session(deps):
@@ -56,37 +57,49 @@ async def run_interactive_session(deps):
     total_cost = 0  # Track cumulative cost of tokens
     print_blue_line()
 
-    while True:
-        colored_print("Enter query ('/exit' to quit): ", color="BLUE", linebreak=False, colorize_all=True)
-        user_input = input()
-        if user_input.lower() == '/exit':
-            break
+    style = Style.from_dict({
+        'prompt': 'ansicyan',
+        'query': 'ansiblue',
+    })
 
-        print() # new line
+    session = PromptSession(style=style)
+
+    while True:
+        prompt_message = HTML(
+            '<prompt>codesearch></prompt> '
+            '<query>Enter query (\'/exit\' to quit, /help for commands): </query>'
+        )
+        with patch_stdout():
+            user_input = await session.prompt_async(message=prompt_message)
+
+        print()  # new line
+
+        if user_input.startswith('/'):
+            result = handle_command(user_input, previous_messages)
+
+            if result.type == CommandType.EXIT:
+                break
+            elif result.type in (CommandType.CONTINUE, CommandType.COPY):
+                previous_messages = result.messages
+                continue
+            elif result.type == CommandType.AGENT_QUERY:
+                prompt_to_use = result.agent_prompt
+                previous_messages = result.messages
+        else:
+            prompt_to_use = USER_PROMPT.replace('{question}', user_input)
+
         from .agent.main_agent import agent
-        # Create a copy of messages with cleared ToolReturn content
-        # This is to clean up the context for the LLM, we keep only the result
-        # Hint: is is not possible to delete ToolReturn messages from the history
-        processed_messages = []
-        for msg in previous_messages:
-            # if msg.role == 'tool-return':
-            #     # Create new ToolReturn with cleared content
-            #     msg = msg.__class__(
-            #         tool_name=msg.tool_name,
-            #         content="<content cleared>",
-            #         tool_id=msg.tool_id,
-            #         timestamp=msg.timestamp
-            #     )
-            processed_messages.append(msg)
+
 
         agent_output = await agent.run(
-            USER_PROMPT.replace('{question}', user_input),
+            prompt_to_use,
             deps=deps,
-            message_history=processed_messages,
+            message_history=previous_messages
         )
 
-        # Update message history for next iteration
-        previous_messages = agent_output.all_messages()
+
+        # remember message history for next iteration
+        previous_messages  = agent_output.all_messages()
 
         # Print agent answer
         colored_print(agent_output.data.answer, color="GREEN", colorize_all=True)
@@ -99,7 +112,7 @@ async def run_interactive_session(deps):
         print_blue_line()
 
         # Log each message
-        for msg in agent_output.all_messages():
+        for msg in previous_messages:
             logger.info(f"Message: {msg}")
 
 async def async_main(verbose, root_dir, tools_result_limit):
