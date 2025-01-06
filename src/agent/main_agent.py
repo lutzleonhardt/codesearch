@@ -46,7 +46,7 @@ def directory(ctx: RunContext[Deps], intention_of_this_call: str, relative_path_
               additional_exclude_dirs=None,
               file_filter: Optional[str] = None,
               hide_empty_folder: bool = False) -> PartialContent[List[str]]:
-    """Get the directory structure at the given path. The result could be truncated (see result_is_complete). It also returns empty folders.
+    """Get the directory structure at the given path (also recursively). Use it for get an overview of the project structure and for filter files and folders. It also provides metadata for lastModified and fileSize.
 
     Args:
         ctx: The run context with dependencies
@@ -58,7 +58,7 @@ def directory(ctx: RunContext[Deps], intention_of_this_call: str, relative_path_
         hide_empty_folder: If True, folders that have no matching files (based on file_filter) and no non-empty subfolders will be hidden from the results.
 
     Returns:
-        PartialContent[List[str]]: A paginated response containing the directory structure. The result could be truncated (see result_is_complete).
+        PartialContent[List[str]]: A response containing the directory structure. The result could be truncated (see result_is_complete).
     """
     directory_tool = DirectoryTool()
     try:
