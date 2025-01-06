@@ -5,18 +5,22 @@ from pydantic_ai.messages import ModelRequest, ModelResponse, SystemPromptPart, 
 from src.shared.utils import colored_print
 from src.agent.prompts import SPEC_PROMPT
 import pyperclip
+import json
+
 
 class CommandType(Enum):
     CONTINUE = auto()
     EXIT = auto()
     AGENT_QUERY = auto()
     COPY = auto()
+    COPY_ALL = auto()
 
 @dataclass
 class CommandResult:
     type: CommandType
     messages: List[dict]
     agent_prompt: Optional[str] = None
+    messages_json: Optional[bytes] = None
 
 def print_blue_line():
     """Print blue separator line."""
@@ -25,7 +29,7 @@ def print_blue_line():
     terminal_width = os.get_terminal_size().columns
     print(f"{Fore.BLUE}{Style.BRIGHT}{'━' * terminal_width}{Style.RESET_ALL}")
 
-def handle_command(command: str, previous_messages: list) -> CommandResult:
+def handle_command(command: str, previous_messages: list, messages_json: Optional[bytes] = None) -> CommandResult:
     """Handle CLI commands and return a CommandResult."""
     parts = command.lower().split(maxsplit=1)
     cmd = parts[0]
@@ -44,6 +48,7 @@ def handle_command(command: str, previous_messages: list) -> CommandResult:
             colored_print("  /spec        - Show current configuration", color="CYAN", colorize_all=True)
             colored_print("  /add-context - Add text to chat history", color="CYAN", colorize_all=True)
             colored_print("  /copy        - Copy latest message to clipboard", color="CYAN", colorize_all=True)
+            colored_print("  /copy-all    - Copy all messages as formatted JSON to clipboard", color="CYAN", colorize_all=True)
             print_blue_line()
             return CommandResult(
                 type=CommandType.CONTINUE,
@@ -89,18 +94,18 @@ def handle_command(command: str, previous_messages: list) -> CommandResult:
                     type=CommandType.CONTINUE,
                     messages=previous_messages
                 )
-            
+
             # Search backwards for final_result
             final_result = None
             for message in reversed(previous_messages):
-                if (isinstance(message, ModelResponse) and 
-                    message.parts and 
+                if (isinstance(message, ModelResponse) and
+                    message.parts and
                     isinstance(message.parts[0], ToolCallPart) and
                     message.parts[0].tool_name == 'final_result' and
                     isinstance(message.parts[0].args, ArgsDict)):
                     final_result = message.parts[0].args.args_dict.get('answer')
                     break
-            
+
             if final_result is None:
                 colored_print("No final result found to copy", color="RED", colorize_all=True)
                 print_blue_line()
@@ -108,7 +113,7 @@ def handle_command(command: str, previous_messages: list) -> CommandResult:
                     type=CommandType.CONTINUE,
                     messages=previous_messages
                 )
-                
+
             pyperclip.copy(final_result)
             colored_print("Latest final result copied to clipboard", color="GREEN", colorize_all=True)
             print_blue_line()
@@ -116,6 +121,41 @@ def handle_command(command: str, previous_messages: list) -> CommandResult:
                 type=CommandType.COPY,
                 messages=previous_messages
             )
+
+        case '/copy-all':
+            if not previous_messages:
+                colored_print("No messages to copy", color="RED", colorize_all=True)
+                print_blue_line()
+                return CommandResult(
+                    type=CommandType.CONTINUE,
+                    messages=previous_messages
+                )
+
+            try:
+                if messages_json:
+                    json_str = messages_json.decode('utf-8')
+                    pyperclip.copy(json_str)
+                    colored_print("All messages copied to clipboard as JSON", color="GREEN", colorize_all=True)
+                    print_blue_line()
+                    return CommandResult(
+                        type=CommandType.COPY_ALL,
+                        messages=previous_messages,
+                        messages_json=messages_json
+                    )
+                else:
+                    colored_print("No messages available to copy", color="RED", colorize_all=True)
+                    print_blue_line()
+                    return CommandResult(
+                        type=CommandType.CONTINUE,
+                        messages=previous_messages
+                    )
+            except Exception as e:
+                colored_print(f"Error copying messages: {str(e)}", color="RED", colorize_all=True)
+                print_blue_line()
+                return CommandResult(
+                    type=CommandType.CONTINUE,
+                    messages=previous_messages
+                )
 
         case _:
             colored_print(f"Unknown command: {command}", color="RED", colorize_all=True)

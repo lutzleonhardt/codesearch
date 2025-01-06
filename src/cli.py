@@ -55,6 +55,7 @@ async def run_interactive_session(deps):
     """Run the interactive session with the agent."""
     previous_messages = []
     total_cost = 0  # Track cumulative cost of tokens
+    agent_output = None  # Initialize to None
     print_blue_line()
 
     style = Style.from_dict({
@@ -75,11 +76,13 @@ async def run_interactive_session(deps):
         print()  # new line
 
         if user_input.startswith('/'):
-            result = handle_command(user_input, previous_messages)
+            # Get messages_json from agent_output if it exists and is not None
+            messages_json = agent_output.all_messages_json() if agent_output is not None else None
+            result = handle_command(user_input, previous_messages, messages_json)
 
             if result.type == CommandType.EXIT:
                 break
-            elif result.type in (CommandType.CONTINUE, CommandType.COPY):
+            elif result.type in (CommandType.CONTINUE, CommandType.COPY, CommandType.COPY_ALL):
                 previous_messages = result.messages
                 continue
             elif result.type == CommandType.AGENT_QUERY:
