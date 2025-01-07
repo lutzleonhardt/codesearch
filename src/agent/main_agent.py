@@ -24,7 +24,6 @@ def format_message(content: Any) -> str:
         return content
     return str(content)
 
-# AI! fix:  Error in file_reader tool: Access denied: Path 'README.md' is outside project root '.'
 def get_safe_path(project_root: str, relative_path: str) -> str:
     """
     Safely join and normalize paths to prevent directory traversal outside project root.
@@ -39,17 +38,24 @@ def get_safe_path(project_root: str, relative_path: str) -> str:
     Raises:
         ValueError: If the resulting path would be outside the project root
     """
-    # Normalize both paths
-    project_root = os.path.normpath(project_root)
+    # Convert both paths to absolute and normalize them
+    abs_root = os.path.abspath(project_root)
+    
+    # Handle if relative_path is already absolute
+    if os.path.isabs(relative_path):
+        abs_path = os.path.normpath(relative_path)
+    else:
+        abs_path = os.path.normpath(os.path.join(abs_root, relative_path))
 
-    # Join paths and normalize
-    full_path = os.path.normpath(os.path.join(project_root, relative_path))
+    # Use realpath to resolve any symlinks
+    real_root = os.path.realpath(abs_root)
+    real_path = os.path.realpath(abs_path)
 
-    # Ensure the path is within project root
-    if not full_path.startswith(project_root):
-        raise ValueError(f"Access denied: Path '{full_path}' is outside project root '{project_root}'")
+    # Check if the path is within project root
+    if not real_path.startswith(real_root):
+        raise ValueError(f"Access denied: Path '{relative_path}' is outside project root '{project_root}'")
 
-    return full_path
+    return real_path
 
 
 agent = Agent(
