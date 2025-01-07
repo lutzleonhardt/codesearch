@@ -23,12 +23,23 @@ class TerminalTool(BaseTool):
     def _run(self, intention_of_this_call: str, command: str, limit: int = 50, root_dir: str = None, **kwargs) -> BaseToolResult:
         """Execute a shell command and return its output."""
         try:
-            output = subprocess.check_output(
-                shlex.split(command),
-                stderr=subprocess.STDOUT,
-                universal_newlines=True,
-                cwd=root_dir
-            )
+            # Use shell=True for commands with pipes or shell operators
+            if any(op in command for op in ['|', '>', '<', '>>', '&&', '||']):
+                output = subprocess.check_output(
+                    command,
+                    stderr=subprocess.STDOUT,
+                    universal_newlines=True,
+                    cwd=root_dir,
+                    shell=True  # Enable shell processing for commands with pipes/operators
+                )
+            else:
+                # Original behavior for simple commands
+                output = subprocess.check_output(
+                    shlex.split(command),
+                    stderr=subprocess.STDOUT,
+                    universal_newlines=True,
+                    cwd=root_dir
+                )
         except subprocess.CalledProcessError as e:
             output = e.output
 
