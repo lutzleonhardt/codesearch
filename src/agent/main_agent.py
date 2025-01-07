@@ -24,7 +24,7 @@ def format_message(content: Any) -> str:
         return content
     return str(content)
 
-
+# AI! fix:  Error in file_reader tool: Access denied: Path 'README.md' is outside project root '.'
 def get_safe_path(project_root: str, relative_path: str) -> str:
     """
     Safely join and normalize paths to prevent directory traversal outside project root.
@@ -70,13 +70,13 @@ async def directory(ctx: RunContext[Deps], intention_of_this_call: str, relative
               additional_exclude_dirs=None,
               file_filter: Optional[str] = None,
               hide_empty_folder: bool = False) -> MaybeSummarizedContent[List[str]]:
-    """Get the directory structure at the given path (also recursively). Use it for get an overview of the project structure and for filter files and folders. It also provides metadata for lastModified and fileSize.
+    """Get the directory structure at the given path (also recursively). Use it for get an overview of the project structure and for filter files and folders. It also provides metadata for lastModified and fileSize. It is always a good idea to show the repo map with this tool with the default max_depth=99999
 
     Args:
         ctx: The run context with dependencies
         intention_of_this_call (required): Provide a clear, specific statement of what you aim to accomplish with this tool invocation: "I do this to get this information."
         relative_path_from_project_root: The relative path from the project root to analyze
-        max_depth: Maximum depth to traverse in the directory tree
+        max_depth: Maximum depth to traverse in the directory tree (default=99999)
         additional_exclude_dirs: Additional directories to exclude beyond the default exclusions. The defaults are: [".git", ".hg", ".svn", ".DS_Store", "node_modules", "bower_components", "dist", "build", "env", "venv", ".venv", "__pycache__", ".pytest_cache", ".mypy_cache", ".cache", ".idea", ".vscode", "vendor", "out", "target", ".bundle", "coverage", "bin", "nuget", ".nuget"]
         file_filter: Optional pattern to filter files (e.g. "*.py" for Python files)
         hide_empty_folder: If True, folders that have no matching files (based on file_filter) and no non-empty subfolders will be hidden from the results.
@@ -90,13 +90,14 @@ async def directory(ctx: RunContext[Deps], intention_of_this_call: str, relative
                 ".git", ".hg", ".svn", ".DS_Store", "node_modules", "bower_components",
                 "dist", "build", "env", "venv", ".venv", "__pycache__", ".pytest_cache",
                 ".mypy_cache", ".cache", ".idea", ".vscode", "vendor", "out", "target",
-                ".bundle", "coverage", "bin", "nuget", ".nuget"
+                ".bundle", "coverage", "bin", "nuget", "*nuget*",  ".nuget", "obj", "debug", "release"
             ]
         exclude_dirs = default_exclude_dirs + (additional_exclude_dirs or [])
         full_path = get_safe_path(ctx.deps.project_root, relative_path_from_project_root)
         logger.info(f"Scanning directory at {full_path} with max_depth={max_depth}")
         if file_filter:
             file_filter="*."+file_filter.lstrip(".") if file_filter.startswith(".") else file_filter
+            file_filter=file_filter.lower() + "*"
         result = await directory_tool.run(
             intention_of_this_call=intention_of_this_call,
             path=full_path,
@@ -140,7 +141,7 @@ async def file_writer(
     intention_of_this_call: str,
     relative_path_from_project_root: str,
     content: str
-) -> MaybeSummarizedContent[int]:
+) -> MaybeSummarizedContent[List[str]]:
     """
     Overwrite or create a file with the provided content.
 
@@ -211,7 +212,7 @@ async def file_reader(ctx: RunContext[Deps], intention_of_this_call: str, relati
         )
         # Handle potential summarized content
         is_summarized = result.get("is_summarized", False)
-        content = result.get("summary", result["items"]) if is_summarized else result["items"]
+        content = result.get("summary") if is_summarized else result["items"]
         return MaybeSummarizedContent(
             total_length=result["total_count"],
             content=content,
