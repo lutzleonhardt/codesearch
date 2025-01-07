@@ -6,6 +6,7 @@ from .base import BaseTool
 from .types import BaseToolResult
 from ..shared import colored_print
 
+#AI? when i ŕun a command which involves a pipe I got an error, i.e. find: paths must precede expression: `|' on find . -type f -name "*.razor" -o -name "*.razor.cs" | sort. Why? and how to fix
 
 class TerminalTool(BaseTool):
     def get_tool_text_start(self, command: str, limit: int = 50, **kwargs) -> List[str]:
