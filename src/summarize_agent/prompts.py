@@ -21,6 +21,10 @@ Follow these rules:
 5. **No Chain-of-Thought**  
    - Do not reveal or include your own reasoning steps.  
    - Provide a final distilled summary or snippet that directly addresses the user’s request.
+   
+6. **Always use full file and directory paths**  
+   - Always use full file and directory paths, including the project root.
+   - also take into consideration possible code-behind files 
 '''
 
 USER_PROMPT = '''
