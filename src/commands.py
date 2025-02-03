@@ -45,7 +45,7 @@ def handle_command(command: str, previous_messages: list, messages_json: Optiona
             colored_print("Available commands:", color="CYAN", colorize_all=True)
             colored_print("  /help        - Show this help message", color="CYAN", colorize_all=True)
             colored_print("  /exit        - Exit the program", color="CYAN", colorize_all=True)
-            colored_print("  /spec        - Show current configuration", color="CYAN", colorize_all=True)
+            colored_print("  /spec        - Create a spec for aider", color="CYAN", colorize_all=True)
             colored_print("  /add-context - Add text to chat history", color="CYAN", colorize_all=True)
             colored_print("  /copy        - Copy latest message to clipboard", color="CYAN", colorize_all=True)
             colored_print("  /copy-all    - Copy all messages as formatted JSON to clipboard", color="CYAN", colorize_all=True)
